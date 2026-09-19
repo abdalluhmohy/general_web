@@ -9,8 +9,8 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 ROOT = Path(__file__).resolve().parent
-DB_PATH = ROOT / os.path.dirname(os.path.abspath(_file_))
-HTML_FILE = os.path.join(BASE_DIR, "gold-nile-partner-dashboard.html"
+DB_PATH = ROOT / "gold-nile.db"
+HTML_FILE = "gold-nile-partner-dashboard.html"
 
 
 def connect_db() -> sqlite3.Connection:
