@@ -336,7 +336,7 @@ class DashboardHandler(SimpleHTTPRequestHandler):
 def main() -> None:
     parser = argparse.ArgumentParser(description="Gold Nile dashboard SQLite server")
     parser.add_argument("--host", default="0.0.0.0")
-    parser.add_argument("--port", type=int, default=8000)
+    parser.add_argument("--port", type=int, default=4000)
     args = parser.parse_args()
     initialize_database()
     server = ThreadingHTTPServer((args.host, args.port), DashboardHandler)
