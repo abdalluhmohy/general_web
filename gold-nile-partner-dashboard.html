@@ -1,0 +1,1709 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>لوحة الشركاء | ذهب النيل للأعمال المتكاملة المحدودة</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=Reem+Kufi:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --ground:#E8EDEA; --paper:#F8FAF9; --ink:#0F2E2D; --ink2:#48625F; --line:#CAD6D2;
+  --nile:#1E6B67; --nile2:#3E8C86; --gold:#B4842A; --gold-soft:#EBDDB2;
+  --ok:#2B7A55; --warn:#9A5F0E; --bad:#A3352A; --r:6px;
+}
+*{box-sizing:border-box}
+html{scroll-padding-top:120px}
+body{margin:0;background:var(--ground);color:var(--ink);font:400 16px/1.75 'IBM Plex Sans Arabic',Tahoma,'Segoe UI',sans-serif;-webkit-text-size-adjust:100%}
+h1,h2,h3{font-family:'Reem Kufi','IBM Plex Sans Arabic',Tahoma,sans-serif;margin:0;font-weight:600;line-height:1.35}
+h2{font-size:28px;margin-bottom:6px}
+h3{font-size:19px;margin-bottom:4px}
+p{margin:0 0 10px}
+bdi,.amt{font-variant-numeric:tabular-nums}
+.wrap{max-width:1120px;margin:0 auto;padding:0 20px}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+
+/* header */
+header.top{background:var(--ink);color:#EAF1EF;position:sticky;top:0;z-index:30}
+.top-in{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:12px 0}
+.brand{display:flex;align-items:center;gap:12px}
+.brand b{font-family:'Reem Kufi',sans-serif;font-size:21px;font-weight:600;display:block;line-height:1.3}
+.brand small{display:block;font-size:13px;color:#A4BFBA;line-height:1.3}
+.top-actions{margin-inline-start:auto;display:flex;gap:8px;flex-wrap:wrap}
+nav.tabs{display:flex;gap:2px;overflow-x:auto;border-top:1px solid #24504D;scrollbar-width:thin}
+nav.tabs a{padding:10px 15px;color:#B9CFCB;text-decoration:none;white-space:nowrap;border-bottom:3px solid transparent;font-size:15px}
+nav.tabs a:hover{color:#fff}
+nav.tabs a[aria-current=page]{color:#fff;border-bottom-color:var(--gold);font-weight:500}
+.badge{display:inline-block;min-width:20px;padding:0 6px;margin-inline-start:6px;border-radius:10px;background:var(--gold);color:#1B1505;font-size:12.5px;line-height:20px;text-align:center}
+
+/* buttons */
+.btn{font:inherit;font-size:14px;padding:7px 14px;border-radius:var(--r);border:1px solid #9FB3AF;background:var(--paper);color:var(--ink);cursor:pointer;line-height:1.5}
+.btn:hover{background:#fff;border-color:var(--nile)}
+.btn.sm{padding:3px 10px;font-size:13.5px;border-color:var(--nile);color:var(--nile);background:transparent}
+.btn.sm:hover{background:var(--nile);color:#fff}
+.btn.danger{border-color:var(--bad);color:var(--bad)}
+.btn.danger:hover{background:var(--bad);color:#fff}
+.btn.ghost{background:transparent;color:#EAF1EF;border-color:#3D6A66}
+.btn.ghost:hover{background:#17423F}
+.btn.gold{background:#E2BE6A;border-color:#E2BE6A;color:#1B1505;font-weight:500}
+.btn.gold:hover{background:#EBCB84}
+.btn[aria-pressed=true]{background:#E2BE6A;color:#1B1505;border-color:#E2BE6A}
+
+.adminbar{background:var(--gold-soft);border-bottom:1px solid #D2BF86;color:#3B2D08;font-size:14.5px}
+.adminbar .wrap{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding-top:8px;padding-bottom:8px}
+.adminbar .btn{background:#fff}
+.adminbar p{margin:0;flex:1 1 320px}
+.adminbar .admin-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+
+main{padding:30px 0 70px;min-height:70vh}
+.sec{margin-top:46px}
+.lead{color:var(--ink2);max-width:70ch;margin-bottom:16px}
+
+/* hero */
+.hero{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:30px 30px 26px;display:grid;gap:30px;grid-template-columns:minmax(0,1fr)}
+@media(min-width:900px){.hero{grid-template-columns:minmax(0,5fr) minmax(0,7fr);align-items:center}}
+.hero-total .lbl{font-size:16px;color:var(--ink2);margin-bottom:2px}
+.hero-total .big{font-family:'Reem Kufi',sans-serif;font-weight:700;font-size:clamp(46px,8vw,84px);line-height:1.1;color:var(--ink);display:block}
+.hero-total .big .cur{font-size:.32em;font-weight:500;color:var(--ink2);margin-inline-start:8px}
+.hero-total .sub{font-size:14.5px;color:var(--ink2);margin-top:6px}
+.gauge{padding-top:34px}
+.gbar{position:relative;height:38px;background:#DDE6E2;border-radius:4px;display:flex;overflow:visible}
+.gbar .segs{display:flex;width:100%;border-radius:4px;overflow:hidden}
+.gbar .segs span{display:block;height:100%;flex:none;border-inline-end:2px solid var(--paper)}
+.gbar .cap{position:absolute;top:-16px;bottom:-8px;width:3px;background:var(--gold);margin-inline-start:-1.5px}
+.gbar .cap em{position:absolute;bottom:100%;inset-inline-end:-4px;white-space:nowrap;font-style:normal;font-size:13.5px;color:var(--warn);font-weight:600;margin-bottom:2px}
+.first .gbar .segs{animation:grow 1s cubic-bezier(.2,.7,.2,1) both;transform-origin:right center}
+@keyframes grow{from{transform:scaleX(0)}}
+.gnote{margin-top:16px;font-size:15.5px}
+.gnote strong{font-weight:600}
+.gnote.bad{color:var(--bad)}
+.legend{list-style:none;margin:14px 0 0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:4px 18px;font-size:14px;color:var(--ink2)}
+.legend li{display:flex;gap:8px;align-items:center}
+.legend i{width:11px;height:11px;border-radius:2px;flex:none}
+
+/* rows */
+.rows{display:grid;grid-template-columns:minmax(0,1fr);column-gap:44px}
+@media(min-width:860px){.rows{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.row{display:grid;grid-template-columns:1fr auto;gap:2px 16px;padding:13px 0;border-bottom:1px solid var(--line);align-items:baseline}
+.row dt{font-weight:500}
+.row dd{margin:0;font-weight:600;font-size:18px;text-align:end}
+.row .s{grid-column:1 / -1;font-size:14px;color:var(--ink2);font-weight:400}
+.cur{font-size:.78em;font-weight:400;color:var(--ink2)}
+.undef{color:var(--ink2);font-weight:400;font-size:.9em}
+
+/* flow bars */
+.flow{display:grid;gap:14px;margin-top:10px}
+.flow .f{display:grid;grid-template-columns:150px 1fr auto;gap:14px;align-items:center}
+@media(max-width:620px){.flow .f{grid-template-columns:1fr auto}.flow .f .track{grid-column:1 / -1;order:3}}
+.track{height:12px;background:#DDE6E2;border-radius:3px;overflow:hidden}
+.track i{display:block;height:100%}
+
+/* notices */
+.notice{border-inline-start:5px solid var(--warn);background:#F6EEDB;padding:14px 18px;border-radius:0 var(--r) var(--r) 0;margin-top:20px}
+.notice.bad{border-color:var(--bad);background:#F6E1DD}
+.notice.info{border-color:var(--nile);background:#DDEBE8}
+.notice ul{margin:6px 0 0;padding-inline-start:20px}
+.notice a{color:inherit;font-weight:500}
+
+/* stages strip */
+.stages{display:grid;gap:18px;grid-template-columns:minmax(0,1fr)}
+@media(min-width:760px){.stages{grid-template-columns:1fr 1fr}}
+.stages h3{font-size:16px;font-family:'IBM Plex Sans Arabic',sans-serif;color:var(--ink2);font-weight:500}
+.stages p.v{font-size:20px;font-weight:600;margin:0}
+.dots{display:flex;gap:5px;margin-top:16px;flex-wrap:wrap}
+.dots i{width:22px;height:8px;border-radius:2px;background:#C9D5D1}
+.dots i.done{background:var(--ok)} .dots i.doing{background:linear-gradient(90deg,var(--ok) 50%,#C9D5D1 50%)}
+
+/* tables */
+.scroll{overflow-x:auto;margin-top:10px}
+table.tbl{width:100%;border-collapse:collapse;font-size:15px;min-width:640px}
+.tbl th{text-align:start;font-weight:500;color:var(--ink2);padding:8px 10px;border-bottom:2px solid var(--ink);white-space:nowrap;font-size:14px}
+.tbl td{padding:10px;border-bottom:1px solid var(--line);vertical-align:top}
+.tbl td.n{white-space:nowrap;font-weight:600}
+.tbl td.note{color:var(--ink2);font-size:14.5px;min-width:180px}
+.tbl tr.sum td{font-weight:600;border-top:2px solid var(--ink);border-bottom:0;background:#EFF3F1}
+.tbl tr.noterow td{padding-top:0;color:var(--ink2);font-size:14.5px}
+.tbl tr.warnrow td{background:#F6EEDB}
+
+/* chips */
+.chip{display:inline-block;font-size:13px;line-height:1.5;padding:1px 10px;border-radius:12px;border:1px solid;white-space:nowrap}
+.chip.paid,.chip.done{color:var(--ok);border-color:#9CC9B2;background:#E3F1E9}
+.chip.planned,.chip.doing{color:var(--nile);border-color:#9CC4C0;background:#E1EFED}
+.chip.estimate{color:var(--warn);border-color:#DDBF85;background:#F6EEDB}
+.chip.undecided,.chip.next{color:var(--ink2);border-color:#BBC8C4;background:#EDF1EF}
+.chip.bad{color:var(--bad);border-color:#DDA8A1;background:#F6E1DD}
+
+/* timeline */
+ol.tl{list-style:none;margin:16px 0 0;padding:0;border-inline-start:2px solid var(--line)}
+ol.tl>li{position:relative;padding:0 26px 14px}
+ol.tl .mk{position:absolute;inset-inline-start:-9px;top:6px;width:16px;height:16px;border-radius:50%;border:2px solid var(--ok);background:var(--ground)}
+ol.tl .done .mk,ol.tl li.done>.mk{background:var(--ok)}
+ol.tl li.doing>.mk{background:linear-gradient(90deg,var(--ok) 50%,var(--ground) 50%)}
+ol.tl li.next>.mk{border-color:#9AAAA6}
+details.ms>summary{cursor:pointer;list-style:none;display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:4px 0;font-weight:500}
+details.ms>summary::-webkit-details-marker{display:none}
+details.ms>summary::after{content:'+';margin-inline-start:auto;color:var(--ink2);font-size:20px;line-height:1}
+details.ms[open]>summary::after{content:'−'}
+.ms-body{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);padding:12px 16px;margin:6px 0 4px;display:grid;gap:8px;font-size:15px}
+.kv{display:grid;grid-template-columns:110px 1fr;gap:12px;align-items:baseline}
+.kv>span:first-child{color:var(--ink2);font-size:14px}
+ol.steps{list-style:none;counter-reset:s;margin:12px 0 0;padding:0}
+ol.steps>li{counter-increment:s;display:grid;grid-template-columns:34px 1fr auto;gap:10px 12px;align-items:center;padding:11px 0;border-bottom:1px solid var(--line)}
+ol.steps>li::before{content:counter(s);width:28px;height:28px;border-radius:50%;background:#DDE6E2;color:var(--ink);display:grid;place-items:center;font-size:14px;font-weight:600}
+ol.steps>li.done::before{background:var(--ok);color:#fff}
+ol.steps>li.doing::before{background:var(--nile);color:#fff}
+ol.steps .act{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+
+/* letter slot */
+.slot{border:2px dashed #9FB3AF;border-radius:10px;min-height:220px;display:grid;place-items:center;text-align:center;padding:16px;background:var(--paper);color:var(--ink2);margin-top:12px}
+.slot img{max-width:100%;max-height:520px;border-radius:4px;display:block;margin:0 auto}
+.two{display:grid;gap:30px;grid-template-columns:minmax(0,1fr)}
+@media(min-width:900px){.two{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+
+/* forms (admin) */
+.in{font:inherit;font-size:14.5px;padding:5px 8px;border:1px solid #8FA5A1;border-radius:4px;background:#fff;color:var(--ink);width:100%;min-width:80px}
+.in.num{min-width:96px;max-width:150px}
+.in.sel{width:auto}
+.in[dir=ltr]{text-align:left}
+input[type=checkbox]{width:18px;height:18px;accent-color:var(--nile)}
+.form{display:grid;gap:12px 18px;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));background:var(--paper);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-top:12px}
+.form label{display:grid;gap:4px;font-size:14px;color:var(--ink2)}
+.addrow{margin-top:10px}
+.docin{margin-top:6px;font-size:13px}
+
+/* dialog + toast */
+dialog{border:0;border-radius:12px;padding:0;width:min(920px,94vw);max-height:92vh;background:var(--paper);color:var(--ink);box-shadow:0 20px 60px rgba(8,30,28,.35)}
+dialog::backdrop{background:rgba(9,30,28,.6)}
+.dh{display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid var(--line)}
+.dh h3{margin:0;flex:1}
+.db{padding:16px 20px 22px;max-height:calc(92vh - 70px);overflow:auto;text-align:center}
+.db img{max-width:100%;height:auto;border-radius:4px}
+.db iframe{width:100%;height:70vh;border:1px solid var(--line);border-radius:4px;background:#fff}
+.adminpw{display:grid;gap:14px;max-width:420px;padding:18px 20px 20px}
+.adminpw p{margin:0;color:var(--ink2);text-align:right}
+.auth-brand{display:flex;align-items:center;gap:12px;padding:4px 0 2px}
+.auth-emblem{width:48px;height:48px;border-radius:14px;display:grid;place-items:center;background:linear-gradient(145deg,#E8C66A,#A7751C);box-shadow:0 8px 18px rgba(180,132,42,.25);color:#fff}
+.auth-emblem svg{width:28px;height:28px}
+.auth-brand strong{display:block;font-family:'Reem Kufi',sans-serif;font-size:20px;color:var(--ink)}
+.auth-brand span{display:block;color:var(--ink2);font-size:12px}
+.pw-shell{position:relative}
+.pw-shell{display:flex;align-items:center;gap:10px}
+.pw-shell .in{flex:1;padding-inline:13px;border:1.5px solid #B8C7C4;box-shadow:inset 0 1px 3px rgba(15,46,45,.04);transition:border-color .2s, box-shadow .2s, transform .2s}
+.pw-shell .in:focus{border-color:var(--nile);box-shadow:0 0 0 4px rgba(30,107,103,.12)}
+.pw-toggle{width:44px;height:44px;display:grid;place-items:center;flex:none;border:1px solid #B8C7C4;background:#fff;color:var(--nile);cursor:pointer;padding:0;border-radius:8px;transition:background .2s, color .2s, border-color .2s, transform .2s}
+.pw-toggle:hover{background:#E8F1EF;border-color:var(--nile);transform:translateY(-1px)}
+.pw-toggle svg{width:21px;height:21px}
+.pw-hint{font-size:12.5px;color:var(--ink2);margin-top:-5px}
+.pw-actions{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
+.pwmsg{min-height:20px;color:var(--bad);font-size:14px;line-height:1.5}
+.pwmsg.ok{color:var(--ok)}
+.admin-analytics{display:grid;gap:12px;min-width:min(420px,100%);background:rgba(255,255,255,.35);border:1px solid rgba(116,93,44,.28);border-radius:10px;padding:12px 14px}
+.analytics-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.analytics-head strong{font-size:15px}
+.analytics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}
+.stat-box{background:#fff;border:1px solid rgba(30,107,103,.16);border-radius:8px;padding:8px 10px}
+.stat-box span{display:block;color:var(--ink2);font-size:12px}
+.stat-box strong{display:block;font-size:22px;line-height:1.2;margin-top:4px}
+.bank-charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-top:12px}
+.bank-chart{background:#fff;border:1px solid rgba(30,107,103,.16);border-radius:8px;padding:12px}
+.bank-chart h4{margin:0 0 12px;font-size:15px}
+.chart-row{display:grid;grid-template-columns:minmax(88px,1fr) minmax(100px,2fr) auto;gap:8px;align-items:center;margin-top:9px;font-size:13px}
+.chart-label{overflow-wrap:anywhere;color:var(--ink2)}
+.chart-track{height:12px;background:#E8EFED;border-radius:8px;overflow:hidden}
+.chart-bar{height:100%;width:var(--bar-width);min-width:2px;background:var(--nile);border-radius:inherit}
+.chart-bar.out{background:#B4842A}
+.chart-bar.in{background:#1A7F45}
+.chart-value{font-weight:600;white-space:nowrap}
+.bank-group{margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+.bank-group:first-child{margin-top:0;padding-top:0;border-top:0}
+.bank-group-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.bank-group-head h4{margin:0;font-size:16px}
+.bank-group-head span{color:var(--ink2);font-size:13px}
+.employee-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-top:12px}
+.employee-card{background:#fff;border:1px solid rgba(30,107,103,.16);border-radius:8px;padding:14px}
+.employee-card h3{margin:10px 0 2px;font-size:18px}
+.employee-card p{margin:0;color:var(--ink2)}
+.employee-card dl{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:14px 0 0}
+.employee-card dl div{border-top:1px solid var(--line);padding-top:7px}
+.employee-card dt{font-size:12px;color:var(--ink2)}
+.employee-card dd{margin:2px 0 0;font-weight:600}
+.employee-photo{width:82px;height:82px;border-radius:50%;object-fit:cover;border:2px solid #D7E3DF}
+.employee-photo.placeholder{display:grid;place-items:center;background:#E8EFED;color:var(--ink2);font-size:13px}
+.page-stats{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.page-stats li{display:flex;justify-content:space-between;gap:12px;padding:6px 10px;border-radius:6px;background:#F7F3E5;border:1px solid rgba(180,132,42,.2)}
+.page-stats span{color:var(--ink2)}
+.page-stats strong{font-size:15px}
+.ask{position:fixed;inset-inline-end:18px;bottom:18px;z-index:40;display:flex;align-items:center;gap:8px;font:inherit;font-size:15.5px;font-weight:500;color:#fff;background:#1A7F45;border:0;border-radius:28px;padding:11px 20px 11px 16px;cursor:pointer;box-shadow:0 6px 20px rgba(10,50,30,.35);animation:bob 3.2s ease-in-out infinite}
+.ask::before{content:'';position:absolute;inset:0;border-radius:inherit;border:2px solid #1A7F45;animation:ring 2.4s ease-out infinite;pointer-events:none}
+.ask:hover{background:#146A39}
+.ask svg{flex:none}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes ring{0%{transform:scale(1);opacity:.7}100%{transform:scale(1.35,1.6);opacity:0}}
+@media(max-width:560px){.ask{inset-inline-end:12px;bottom:12px;padding:10px 16px 10px 13px}}
+#toast{position:fixed;inset-inline:0;bottom:22px;margin:auto;width:max-content;max-width:90vw;background:var(--ink);color:#fff;padding:10px 20px;border-radius:8px;z-index:60;font-size:15px;opacity:0;pointer-events:none;transition:opacity .2s}
+#toast.on{opacity:1}
+
+@media(max-width:640px){
+  body{font-size:15px;overflow-x:hidden}
+  .wrap{padding-inline:12px}
+  header.top{position:sticky;top:0}
+  .top-in{gap:10px;padding:9px 0}
+  .brand{min-width:0;flex:1 1 100%}
+  .brand b{font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .brand small{font-size:11px}
+  .top-actions{width:100%;margin-inline-start:0;justify-content:stretch}
+  .top-actions .btn{flex:1;min-height:42px;padding-inline:8px;font-size:13px}
+  nav.tabs{gap:0;margin-inline:-12px;padding-inline:6px;overscroll-behavior-inline:contain}
+  nav.tabs a{padding:9px 12px;font-size:13px;min-height:42px;display:flex;align-items:center}
+  main{padding:20px 0 52px;min-height:75vh}
+  h2{font-size:23px;line-height:1.45}
+  h3{font-size:17px}
+  .lead{font-size:14px;line-height:1.7}
+  .hero{padding:18px 15px;border-radius:8px;gap:20px}
+  .hero-total .big{font-size:clamp(38px,15vw,58px)}
+  .gauge{padding-top:25px}
+  .gbar{height:28px}
+  .gbar .cap em{font-size:11px}
+  .sec{margin-top:30px}
+  .rows{display:block}
+  .row{grid-template-columns:minmax(0,1fr) auto;gap:3px 8px;padding:10px 0}
+  .row dd{font-size:16px}
+  .flow .f{grid-template-columns:1fr auto;gap:7px 10px;font-size:14px}
+  .flow .f .track{grid-column:1 / -1;order:3}
+  .stages{gap:10px}
+  .stages p.v{font-size:17px}
+  .scroll{margin-inline:-2px;padding-bottom:5px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  table.tbl{font-size:13px;min-width:580px}
+  .tbl th{font-size:12px;padding:7px 8px}
+  .tbl td{padding:8px}
+  .btn{min-height:40px;padding:7px 11px}
+  .btn.sm{min-height:36px;padding:5px 9px}
+  .adminbar .wrap{padding-block:8px}
+  .adminbar .admin-actions{width:100%;display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .adminbar .admin-actions .btn{min-width:0;font-size:12px;padding-inline:5px}
+  .form{grid-template-columns:1fr;padding:12px;gap:10px}
+  .in{font-size:15px;min-height:40px}
+  textarea.in{min-height:78px}
+  .bank-charts{grid-template-columns:1fr;gap:10px}
+  .bank-chart{padding:10px}
+  .chart-row{grid-template-columns:90px minmax(75px,1fr) auto;gap:6px;font-size:12px}
+  .chart-value{font-size:12px}
+  .employee-grid{grid-template-columns:1fr;gap:10px}
+  .employee-card{padding:13px}
+  .employee-card dl{gap:6px}
+  .employee-card dd{font-size:14px}
+  .bank-group-head{align-items:flex-start;flex-direction:column;gap:2px}
+  .notice{padding:11px 13px;font-size:14px}
+  .slot{min-height:160px}
+  dialog{width:calc(100vw - 20px);max-height:94vh;border-radius:9px}
+  .dh{padding:11px 13px}
+  .db{padding:12px 13px 16px}
+  .pw-actions{display:grid;grid-template-columns:1fr 1fr}
+  footer.foot{padding-bottom:86px;font-size:12px}
+}
+
+footer.foot{border-top:1px solid var(--line);padding:22px 0 40px;color:var(--ink2);font-size:14px}
+
+/* report (print only) */
+#report{display:none}
+@media print{
+  @page{size:A4;margin:14mm}
+  html,body{background:#fff}
+  body>*:not(#report){display:none!important}
+  #report{display:block;color:#111;font:400 12.5px/1.65 'IBM Plex Sans Arabic',Tahoma,sans-serif}
+  #report h1{font-size:24px;margin:0 0 2px}
+  #report h2{font-size:16px;margin:18px 0 6px;border-bottom:2px solid #111;padding-bottom:3px;break-after:avoid}
+  #report table{width:100%;border-collapse:collapse;margin-bottom:6px}
+  #report th,#report td{border:1px solid #999;padding:4px 7px;text-align:start;vertical-align:top}
+  #report th{background:#eee}
+  #report tr{break-inside:avoid}
+  #report .sm{color:#444;font-size:11.5px}
+  #report .tot td{font-weight:700;background:#f2f2f2}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media(max-width:560px){.wrap{padding:0 14px}.hero{padding:22px 18px}h2{font-size:24px}.kv{grid-template-columns:1fr;gap:0}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="top-in">
+      <div class="brand">
+        <svg width="40" height="32" viewBox="0 0 40 32" aria-hidden="true"><path d="M8 4h24l7 24H1z" fill="#D9B25E"/><path d="M8 4h24l-3 9H11z" fill="#EBCB84"/><path d="M1 28h38v3H1z" fill="#8C6A1F"/></svg>
+        <div><b id="companyName">ذهب النيل للأعمال المتكاملة المحدودة</b><small>لوحة الشركاء لمتابعة مشروع معمل فحص الذهب</small></div>
+      </div>
+      <div class="top-actions">
+        <button class="btn gold" data-act="pdf">تحميل التقرير PDF</button>
+        <button class="btn ghost" data-act="admin" id="adminBtn" aria-pressed="false">وضع الإدارة</button>
+      </div>
+    </div>
+    <nav class="tabs" id="nav" aria-label="أقسام اللوحة"></nav>
+  </div>
+</header>
+<div class="adminbar" id="adminbar" hidden></div>
+
+<main class="wrap" id="main"><div id="app"></div></main>
+
+<footer class="foot"><div class="wrap">ذهب النيل للأعمال المتكاملة المحدودة — الأرقام بالدولار الأمريكي، وتُعرض العملة الأصلية عند الحاجة. سعر الصرف المعتمد في الحساب قابل للتعديل من وضع الإدارة.</div></footer>
+
+<div id="report" aria-hidden="true"></div>
+<button class="ask" id="askBtn" data-act="ask" aria-label="لدي استفسار: فتح واتساب للتواصل">
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 2.5a9.5 9.5 0 0 0-8.1 14.4L2.5 21.5l4.7-1.3A9.5 9.5 0 1 0 12 2.5z" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/><path d="M8.6 7.9c.2-.4.5-.4.7-.4h.5c.2 0 .4 0 .5.4l.7 1.6c.1.2 0 .4-.1.6l-.5.6c-.1.2-.1.3 0 .5.5.9 1.4 1.8 2.6 2.3.2.1.4.1.5-.1l.7-.8c.2-.2.3-.2.5-.1l1.6.8c.2.1.3.2.3.4 0 .5-.3 1.2-.9 1.5-.6.3-1.3.3-2.3 0-1.7-.6-3.2-1.7-4.2-3.2-.7-1-1.1-2-.9-2.9.1-.5.3-.9.5-1.2z" fill="#fff"/></svg>
+  لدي استفسار
+</button>
+<div id="toast" role="status" aria-live="polite"></div>
+<dialog id="docDlg" aria-labelledby="docTitle">
+  <div class="dh"><h3 id="docTitle">المستند</h3><a class="btn sm" id="docNew" target="_blank" rel="noopener">فتح في نافذة جديدة</a><button class="btn sm" data-act="close-doc">إغلاق</button></div>
+  <div class="db" id="docBody"></div>
+</dialog>
+<dialog id="adminPwdDlg" aria-labelledby="adminPwdTitle">
+  <div class="dh"><h3 id="adminPwdTitle">دخول آمن للإدارة</h3><button class="btn sm" data-act="close-admin-pwd">إغلاق</button></div>
+  <div class="adminpw">
+    <div class="auth-brand"><span class="auth-emblem" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3 4.8 12.2a7.2 7.2 0 0 0 14.4 0L12 3Z" fill="currentColor" opacity=".95"/><path d="m8.7 13.1 2.1 2.1 4.5-5" stroke="#8C6419" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></span><div><strong>ذهب النيل</strong><span>بوابة الإدارة الآمنة</span></div></div>
+    <p>أدخل كلمة المرور للوصول إلى بيانات الشركة وإدارتها.</p>
+    <div class="pw-shell">
+      <input id="adminPwdInput" class="in" type="password" dir="ltr" autocomplete="off" placeholder="كلمة المرور" aria-label="كلمة المرور">
+      <button type="button" class="pw-toggle" data-act="toggle-admin-pwd" aria-label="إظهار كلمة المرور" title="إظهار كلمة المرور"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="2.6" stroke="currentColor" stroke-width="1.8"/></svg></button>
+    </div>
+    <div class="pw-hint">تظل بيانات الإدارة محمية ولا تظهر للزوار.</div>
+    <div id="adminPwdMsg" class="pwmsg" aria-live="polite"></div>
+    <div class="pw-actions">
+      <button class="btn gold" data-act="confirm-admin">تفعيل</button>
+      <button class="btn ghost" data-act="close-admin-pwd">إلغاء</button>
+    </div>
+  </div>
+</dialog>
+<dialog id="adminNameDlg" aria-labelledby="adminNameTitle">
+  <div class="dh"><h3 id="adminNameTitle">إعداد اسم الإدارة</h3><button class="btn sm" data-act="close-admin-name">إغلاق</button></div>
+  <div class="adminpw">
+    <p>هذا أول دخول لك في وضع الإدارة. أدخل اسمك ليظهر في الترحيب الشخصي في كل مرة.</p>
+    <input id="adminNameInput" class="in" type="text" placeholder="اسمك الكامل" aria-label="اسمك الكامل">
+    <div id="adminNameMsg" class="pwmsg" aria-live="polite"></div>
+    <div class="pw-actions">
+      <button class="btn" data-act="confirm-admin-name">حفظ الاسم</button>
+      <button class="btn ghost" data-act="close-admin-name">إلغاء</button>
+    </div>
+  </div>
+</dialog>
+<input type="file" id="importFile" accept="application/json,.json" hidden>
+
+<!-- البيانات الافتراضية: أرقام ونصوص فقط. لا توجد ملفات أو صور داخل الصفحة؛ المستندات تُربط برابط أو مسار في حقل «مصدر المستند». -->
+<script type="application/json" id="default-data">
+{
+  "company": { "name": "ذهب النيل للأعمال المتكاملة المحدودة", "status": "مرحلة ترخيص معمل فحص الذهب وتجهيز المعدات" },
+  "settings": {
+    "fx": 3.75, "investmentSAR": 250000, "receivedSAR": 0,
+    "seedUSD": 5000, "reservedSDG": 4500000, "reservedUSD": 650,
+    "permitFee": 150, "clearanceFee": 400, "storageBase": "",
+    "whatsapp": "https://wa.me/message/CXBSIVOQUQFHC1"
+  },
+  "ledger": [
+    { "group": "setup", "title": "المحامي + التسجيل", "usd": 2180, "status": "paid", "source": "seed", "ceiling": false, "note": "مدفوع", "doc": "" },
+    { "group": "setup", "title": "إضافة وتوسعة الأنشطة", "usd": 500, "status": "paid", "source": "seed", "ceiling": false, "note": "مدفوع، بدون فاتورة", "doc": "" },
+    { "group": "setup", "title": "إيجار محل/مقر كوستي", "usd": 300, "status": "paid", "source": "seed", "ceiling": false, "note": "3 أشهر، من مبلغ الـ5,000 دولار", "doc": "" },
+    { "group": "setup", "title": "رسوم الرقم/الملف الضريبي", "usd": 200, "status": "paid", "source": "seed", "ceiling": false, "note": "ذُكر أنها تُخصم في الإقرار الضريبي بنهاية السنة", "doc": "" },
+    { "group": "setup", "title": "فتح ملف الزكاة", "usd": 70, "status": "paid", "source": "seed", "ceiling": false, "note": "ذُكر أنها تُخصم من الزكاة بنهاية السنة", "doc": "" },
+    { "group": "setup", "title": "لابتوب", "usd": 900, "status": "paid", "source": "seed", "ceiling": false, "note": "أصل للشركة", "doc": "" },
+
+    { "group": "personal", "title": "إيجار شخصي لشقة السكن في الخرطوم", "usd": 600, "status": "paid", "source": "personal", "ceiling": false, "note": "200 دولار شهريًا × 3 أشهر. مساهمة شخصية وليست مصروف مقر للشركة", "doc": "" },
+    { "group": "personal", "title": "المواصلات", "usd": 480, "status": "paid", "source": "personal", "ceiling": false, "note": "تقريبًا: 15 دولارًا يوميًا × 4 أيام أسبوعيًا × شهرين تقريبًا", "doc": "" },
+    { "group": "personal", "title": "رحلة كوستي", "usd": 300, "status": "paid", "source": "personal", "ceiling": false, "note": "5 أيام، وتشمل السفر والسكن والمعيشة", "doc": "" },
+    { "group": "personal", "title": "المستشار القانوني للعقود", "usd": 200, "status": "planned", "source": "personal", "ceiling": false, "note": "سيُدفع من المال الخاص", "doc": "" },
+    { "group": "personal", "title": "موظف التعاقدات", "usd": 150, "status": "paid", "source": "personal", "ceiling": false, "note": "مدفوع من المال الخاص", "doc": "" },
+
+    { "group": "fees", "title": "ترخيص معمل الذهب", "usd": 1000, "status": "planned", "source": "investment", "ceiling": true, "stage": "approval", "note": "يُدفع بعد الموافقة", "doc": "" },
+    { "group": "fees", "title": "تسجيل المستورد/المورد", "usd": 600, "status": "planned", "source": "investment", "ceiling": true, "stage": "import", "note": "", "doc": "" },
+    { "group": "fees", "title": "تسجيل قسم الذهب", "usd": 150, "status": "planned", "source": "investment", "ceiling": true, "stage": "license", "note": "", "doc": "" },
+    { "group": "fees", "title": "الملاءة المالية", "usd": null, "status": "undecided", "source": "investment", "ceiling": true, "stage": "license", "note": "الشرط الأصلي المذكور 20,000 دولار. المطلوب حساب ملاءة واقعية مرتبطة بالاحتياجات الفعلية، والقيمة النهائية لم تُعتمد بعد", "doc": "" },
+
+    { "group": "premises", "title": "أبواب / ألمنيوم / طاولات", "usd": 1500, "status": "estimate", "source": "investment", "ceiling": true, "stage": "premises", "note": "", "doc": "" },
+    { "group": "premises", "title": "اللافتة الخارجية + الملصقات", "usd": 500, "status": "estimate", "source": "investment", "ceiling": true, "stage": "premises", "note": "", "doc": "" },
+    { "group": "premises", "title": "الكاميرات", "usd": 400, "status": "estimate", "source": "investment", "ceiling": true, "stage": "premises", "note": "", "doc": "" },
+    { "group": "premises", "title": "سكن مسؤول العقود والفني", "usd": 150, "status": "estimate", "source": "investment", "ceiling": true, "stage": "premises", "note": "", "doc": "" }
+  ],
+  "devices": [
+    { "name": "جهاز فيشر 520", "model": "Goldscope SD 520 DPP+", "price": 40000, "priceKind": "estimate", "customsPct": 25, "permit": true, "clearance": true, "ceiling": true,
+      "note": "سُئل مندوب فيشر عن استخدام الجهاز للتربة والصخور، فأوصى بجهاز فانتا ماكس لهذا الغرض. لذلك لا تدخل التربة والصخور ضمن وظيفة الجهاز في المرحلة الحالية. السعر حوالي 40 ألف دولار (تقديري)، والجمارك 25% من قيمته، والتخليص الجمركي 400 دولار.", "doc": "" },
+    { "name": "الميزان الدقيق", "model": "ميزان تحليلي", "price": 1500, "priceKind": "estimate", "customsPct": 25, "permit": true, "clearance": true, "ceiling": true,
+      "note": "سعر متوسط تقديري للتخطيط وليس سعر شراء نهائيًا. السعة المستهدفة تقريبًا 300–600 جرام، والدقة 0.001 جرام (1 ملغ)، وقابل للمعايرة ومناسب لوزن عينات السبائك. لاحقًا تُقارن 2–3 موديلات فعلية.", "doc": "" },
+    { "name": "الخرامة / جهاز تجهيز السبائك", "model": "", "price": null, "priceKind": "estimate", "customsPct": null, "permit": true, "clearance": true, "ceiling": true,
+      "note": "السعر ونسبة الجمارك لم يُحددا بعد، ولا يُفترض أي منهما.", "doc": "" },
+    { "name": "جهاز الليزر", "model": "", "price": null, "priceKind": "estimate", "customsPct": null, "permit": true, "clearance": true, "ceiling": true,
+      "note": "السعر ونسبة الجمارك لم يُحددا بعد، ولا يُفترض أي منهما.", "doc": "" }
+  ],
+  "cancelled": "أُلغيت من المرحلة الحالية جميع المعدات المرتبطة بتحليل التربة والصخور.",
+  "milestones": [
+    { "title": "تأسيس الشركة", "status": "done", "start": "", "done": "", "desc": "تأسيس الشركة وتسجيلها.", "doc": "" },
+    { "title": "السجل التجاري", "status": "done", "start": "", "done": "", "desc": "استلام تسجيل الشركة بالعربية والإنجليزية. انتهى دور المحامي بعد مرحلة السجل التجاري.", "doc": "" },
+    { "title": "عقد التأسيس", "status": "done", "start": "", "done": "", "desc": "استلام عقد التأسيس/الإنشاء.", "doc": "" },
+    { "title": "التفويض", "status": "done", "start": "", "done": "", "desc": "إصدار ورقة تفويض/صلاحية التوقيع.", "doc": "" },
+    { "title": "الرقم الضريبي", "status": "done", "start": "", "done": "", "desc": "فتح الملف/الرقم الضريبي.", "doc": "" },
+    { "title": "القيمة المضافة", "status": "done", "start": "", "done": "", "desc": "استلام ورقة متعلقة بالقيمة المضافة.", "doc": "" },
+    { "title": "الزكاة", "status": "done", "start": "", "done": "", "desc": "فتح ملف الزكاة.", "doc": "" },
+    { "title": "الحساب البنكي", "status": "done", "start": "", "done": "", "desc": "فتح حساب الشركة في بنك أم درمان الوطني. الحسابات تشمل: الجنيه السوداني، والدولار الأمريكي، والريال العماني، والريال السعودي.", "doc": "" },
+    { "title": "الغرفة التجارية", "status": "done", "start": "", "done": "", "desc": "التسجيل في الغرفة التجارية.", "doc": "" },
+    { "title": "ترخيص معمل فحص الذهب", "status": "doing", "costRef": "license", "start": "", "done": "", "desc": "التسجيل لدى وزارة المعادن للحصول على ترخيص معمل فحص الذهب.", "doc": "" },
+    { "title": "متطلبات الملاءة", "status": "doing", "start": "", "done": "", "desc": "حساب ملاءة واقعية مرتبطة بالاحتياجات الفعلية. القيمة النهائية لم تُعتمد بعد.", "doc": "" },
+    { "title": "تجهيز قائمة المعدات", "status": "doing", "start": "", "done": "", "desc": "المعدات المعتمدة: فيشر 520، والميزان الدقيق، والخرامة، وجهاز الليزر.", "doc": "" },
+    { "title": "الموافقة والترخيص", "status": "next", "costRef": "approval", "start": "", "done": "", "desc": "الحصول على الموافقة ثم دفع رسوم ترخيص المعمل.", "doc": "" },
+    { "title": "تعيين الفني", "status": "next", "start": "", "done": "", "desc": "تعيين فني للمعمل، وهو أحد متطلبات الترخيص.", "doc": "" },
+    { "title": "الاستيراد", "status": "next", "costRef": "import", "start": "", "done": "", "desc": "إجراءات الغرفة التجارية والاستيراد، وتصاريح الاستيراد لكل جهاز.", "doc": "" },
+    { "title": "الجمارك والتخليص", "status": "next", "costRef": "customs", "start": "", "done": "", "desc": "الجمارك: 25% من القيمة لفيشر والميزان، ولم تُحدد للخرامة والليزر. ويُضاف التخليص الجمركي لكل جهاز.", "doc": "" },
+    { "title": "تجهيز المقر", "status": "next", "costRef": "premises", "start": "", "done": "", "desc": "أبواب وألمنيوم وطاولات، واللافتة الخارجية، والكاميرات، وسكن مسؤول العقود والفني.", "doc": "" },
+    { "title": "العقود والفواتير", "status": "next", "start": "", "done": "", "desc": "تجهيز العقود والفواتير.", "doc": "" },
+    { "title": "التشغيل", "status": "next", "start": "", "done": "", "desc": "بدء تشغيل المعمل.", "doc": "" }
+  ],
+  "steps": [
+    { "title": "تسجيل الشركة لدى وزارة المعادن", "status": "next", "doc": "" },
+    { "title": "استيفاء متطلبات الترخيص", "status": "next", "doc": "" },
+    { "title": "متطلب الملاءة المالية", "status": "doing", "doc": "" },
+    { "title": "تقديم المستندات", "status": "next", "doc": "" },
+    { "title": "تعيين فني للمعمل", "status": "next", "doc": "" },
+    { "title": "تقديم قائمة المعدات", "status": "doing", "doc": "" },
+    { "title": "الحصول على الموافقة", "status": "next", "doc": "" },
+    { "title": "دفع رسوم ترخيص المعمل", "status": "next", "doc": "" },
+    { "title": "إجراءات الغرفة التجارية والاستيراد", "status": "next", "doc": "" },
+    { "title": "الجمارك والتخليص", "status": "next", "doc": "" },
+    { "title": "تجهيز المقر", "status": "next", "doc": "" },
+    { "title": "تجهيز العقود والفواتير", "status": "next", "doc": "" },
+    { "title": "بدء التشغيل", "status": "next", "doc": "" }
+  ],
+  "solvencyLetter": { "doc": "" },
+  "banking": {
+    "accounts": [
+      { "bank": "بنك أم درمان الوطني", "accountNo": "123456789", "currency": "SDG", "balance": 1200000, "purpose": "الحساب الرئيسي للشركة", "iban": "SD123456789", "notes": "حساب الشركة العام" },
+      { "bank": "بنك أم درمان الوطني", "accountNo": "123456790", "currency": "USD", "balance": 15000, "purpose": "الحساب الرئيسي للشركة", "iban": "US123456790", "notes": "حساب الدولار" },
+      { "bank": "بنك أم درمان الوطني", "accountNo": "123456791", "currency": "SAR", "balance": 50000, "purpose": "الحساب الرئيسي للشركة", "iban": "SA123456791", "notes": "حساب الريال السعودي" },
+      { "bank": "بنك الخرطوم", "accountNo": "987654321", "currency": "USD", "balance": 15000, "purpose": "بيع وشراء الذهب", "iban": "US987654321", "notes": "حساب عمليات الذهب" }
+    ],
+    "journal": [
+      { "date": "2026-09-01", "type": "إيداع", "bank": "بنك أم درمان الوطني", "currency": "SDG", "amount": 250000, "description": "إيداع أولي", "direction": "in" },
+      { "date": "2026-09-04", "type": "سحب", "bank": "بنك الخرطوم", "currency": "USD", "amount": 1200, "description": "دفع رسوم معمل", "direction": "out" }
+    ],
+    "transfers": [
+      { "invoiceNo": "TR-2026-001", "date": "2026-09-02", "direction": "in", "fromTo": "الاستثمار", "amount": 25000, "currency": "USD", "status": "مكتمل", "note": "إيداع من المستثمر" },
+      { "invoiceNo": "TR-2026-002", "date": "2026-09-06", "direction": "out", "fromTo": "مورد معدات", "amount": 5400, "currency": "USD", "status": "مكتمل", "note": "دفع تجهيزات أولية" }
+    ]
+  },
+  "employees": [
+    { "name": "مسؤول الإدارة", "department": "الإدارة", "role": "مدير الإدارة", "phone": "", "status": "active", "salary": 0, "currency": "USD", "hireDate": "", "attendance": "", "absence": "", "deductions": 0, "bonuses": 0, "commissions": 0, "warnings": "", "contracts": "", "achievements": "", "passportNumber": "", "passportDoc": "", "photo": "", "notes": "" },
+    { "name": "مسؤول المالية", "department": "المالية", "role": "مسؤول الحسابات", "phone": "", "status": "active", "salary": 0, "currency": "USD", "hireDate": "", "attendance": "", "absence": "", "deductions": 0, "bonuses": 0, "commissions": 0, "warnings": "", "contracts": "", "achievements": "", "passportNumber": "", "passportDoc": "", "photo": "", "notes": "" },
+    { "name": "المستشار القانوني", "department": "الإدارة القانونية", "role": "مستشار قانوني", "phone": "", "status": "active", "salary": 0, "currency": "USD", "hireDate": "", "attendance": "", "absence": "", "deductions": 0, "bonuses": 0, "commissions": 0, "warnings": "", "contracts": "", "achievements": "", "passportNumber": "", "passportDoc": "", "photo": "", "notes": "" },
+    { "name": "مسؤول التعاقدات", "department": "إدارة التعاقدات", "role": "مسؤول العقود", "phone": "", "status": "active", "salary": 0, "currency": "USD", "hireDate": "", "attendance": "", "absence": "", "deductions": 0, "bonuses": 0, "commissions": 0, "warnings": "", "contracts": "", "achievements": "", "passportNumber": "", "passportDoc": "", "photo": "", "notes": "" },
+    { "name": "مسؤول التسويق", "department": "التسويق", "role": "مسؤول التسويق", "phone": "", "status": "active", "salary": 0, "currency": "USD", "hireDate": "", "attendance": "", "absence": "", "deductions": 0, "bonuses": 0, "commissions": 0, "warnings": "", "contracts": "", "achievements": "", "passportNumber": "", "passportDoc": "", "photo": "", "notes": "" }
+  ],
+  "tasks": [
+    { "title": "إعداد خطة التسويق الأولى", "department": "التسويق", "assignee": "مسؤول التسويق", "status": "قيد التنفيذ", "due": "", "priority": "متوسطة", "notes": "" },
+    { "title": "إعداد كشف الحسابات والمصروفات", "department": "المالية", "assignee": "مسؤول المالية", "status": "قيد التنفيذ", "due": "", "priority": "عالية", "notes": "" },
+    { "title": "مراجعة العقود والنماذج القانونية", "department": "الإدارة القانونية", "assignee": "المستشار القانوني", "status": "جديدة", "due": "", "priority": "عالية", "notes": "" },
+    { "title": "متابعة عقود الموردين والشركاء", "department": "إدارة التعاقدات", "assignee": "مسؤول التعاقدات", "status": "جديدة", "due": "", "priority": "متوسطة", "notes": "" }
+  ],
+  "documents": [
+    { "title": "سجل الشركة", "doc": "" },
+    { "title": "عقد التأسيس", "doc": "" },
+    { "title": "العقد الاستثماري للشراكة", "doc": "" },
+    { "title": "ورقة حساب البنك", "doc": "" },
+    { "title": "ورقة الضريبة", "doc": "" },
+    { "title": "ورقة القيمة المضافة", "doc": "" },
+    { "title": "ورقة الزكاة", "doc": "" },
+    { "title": "ورقة تسجيل الغرفة التجارية", "doc": "" },
+    { "title": "ورقة تسجيل الغرفة التجارية للموردين والمصدرين", "doc": "" },
+    { "title": "تصريح وزارة المعادن للمعمل", "doc": "" }
+  ],
+  "governmentLetters": [],
+  "users": [],
+  "open": [
+    { "text": "الموديل النهائي وسعر الميزان.", "done": false },
+    { "text": "القيمة النهائية لجمارك فيشر حسب قيمة الشراء النهائية.", "done": false },
+    { "text": "جمارك الخرامة.", "done": false },
+    { "text": "جمارك الليزر.", "done": false },
+    { "text": "العدد النهائي لتصاريح الاستيراد والتخليص.", "done": false },
+    { "text": "القيمة النهائية للملاءة المالية.", "done": false },
+    { "text": "التكلفة النهائية الكاملة حتى التشغيل.", "done": false },
+    { "text": "اعتماد الفصل بين إيجار محل/مقر كوستي (300 دولار لثلاثة أشهر من مبلغ الـ5,000) وإيجار الشقة الشخصية في الخرطوم (600 دولار لثلاثة أشهر كمساهمة شخصية).", "done": false },
+    { "text": "الاسم القانوني النهائي للشركة إن كان مختلفًا عن الصيغة الحالية.", "done": false }
+  ]
+}
+</script>
+
+<script>
+(() => {
+'use strict';
+
+const SUPABASE_URL = 'https://nhktkdypmslwpkriavan.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_55-H-XB1HlWBG2r4CUZ8uw_QYxEwlMi';
+const supabaseClient = window.supabase?.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY) || null;
+
+/* ============ أدوات عامة ============ */
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const nf = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 });
+const nf2 = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 });
+const usd = n => n == null ? '<span class="undef">غير محدد</span>' : `<bdi class="amt">${nf.format(Math.round(n))}</bdi> <span class="cur">دولار</span>`;
+const money = (n, unit) => n == null ? '<span class="undef">غير محدد</span>' : `<bdi class="amt">${nf.format(Math.round(n))}</bdi> <span class="cur">${unit}</span>`;
+const getPath = (o, p) => p.split('.').reduce((a, k) => a == null ? a : a[k], o);
+const setPath = (o, p, v) => { const ks = p.split('.'), last = ks.pop(); ks.reduce((a, k) => a[k], o)[last] = v; };
+const chip = (k, t) => `<span class="chip ${k}">${t}</span>`;
+
+const PAGE_LABEL = { home: 'الرئيسية', visitors: 'تقارير الزوار', banking: 'الحسابات البنكية', finance: 'المالية', stages: 'المراحل', equipment: 'الممعدات', licensing: 'التراخيص والرسوم', docs: 'المستندات', open: 'النقاط غير المحسومة' };
+const TRANSFER_TYPES = { incoming_internal: 'وارد من الداخل', incoming_external: 'وارد من الخارج', outgoing_internal: 'صادر إلى الداخل', outgoing_external: 'صادر إلى الخارج' };
+const DEPARTMENTS = ['التسويق', 'المالية', 'الإدارة', 'الإدارة القانونية', 'إدارة التعاقدات'];
+const EMPLOYEE_STATUS = { active: 'على رأس العمل', leave: 'إجازة', stopped: 'متوقف' };
+const TASK_STATUS = { جديدة: 'جديدة', 'قيد التنفيذ': 'قيد التنفيذ', مكتملة: 'مكتملة', متوقفة: 'متوقفة' };
+const ATTENDANCE_STATUS = { present: 'حاضر', excused: 'غائب بعذر', absent: 'غائب بدون عذر' };
+const STATUS = { paid: 'مدفوع', planned: 'مخطط', estimate: 'تقديري', undecided: 'غير معتمد' };
+const MSTAT = { done: 'مكتمل', doing: 'جاري', next: 'قادم' };
+const KIND = { estimate: 'سعر تقديري', quote: 'عرض سعر', final: 'سعر شراء نهائي' };
+const GROUP = { setup: 'مصروفات مبلغ التأسيس', personal: 'مساهمات شخصية', fees: 'رسوم الترخيص والاستيراد', premises: 'تجهيز المقر' };
+const CAT = { equipment: 'المعدات', customs: 'الجمارك', permits: 'تصاريح الاستيراد', clearance: 'التخليص الجمركي', fees: 'رسوم الترخيص والاستيراد', premises: 'تجهيز المقر', setup: 'مصروفات مبلغ التأسيس', personal: 'مساهمات شخصية' };
+const CATCOL = { equipment: '#1E6B67', customs: '#3E8C86', permits: '#7FB2AC', clearance: '#A9CBC6', fees: '#B4842A', premises: '#D4B36A', setup: '#6B7F7D', personal: '#93A3A1' };
+const NEWROW = {
+  setup:    { source: 'seed', ceiling: false, status: 'paid' },
+  personal: { source: 'personal', ceiling: false, status: 'paid' },
+  fees:     { source: 'investment', ceiling: true, status: 'planned' },
+  premises: { source: 'investment', ceiling: true, status: 'estimate' }
+};
+
+/* ============ الحالة والتخزين ============ */
+const DEFAULT = JSON.parse($('#default-data').textContent);
+const LS_KEY = 'goldnile-partner-dashboard-v1';
+const ADMIN_NAME_KEY = 'goldnile-admin-name-v1';
+const ADMIN_STATS_KEY = 'goldnile-admin-stats-v2';
+const state = { data: null, admin: false, page: 'home', source: 'default', first: true, canStore: true };
+const ADMIN_PASSWORD_HASH = '12c49688524dd971bf3755222b9929c961006305d60ad57f3e835e6c6a7620d2';
+
+function getAdminName() {
+  try { return localStorage.getItem(ADMIN_NAME_KEY) || ''; } catch (e) { return ''; }
+}
+function saveAdminName(name) {
+  const clean = String(name || '').trim();
+  try { localStorage.setItem(ADMIN_NAME_KEY, clean); return clean; } catch (e) { return clean; }
+}
+function getVisitorStats() {
+  try {
+    const raw = localStorage.getItem(ADMIN_STATS_KEY);
+    const parsed = raw ? JSON.parse(raw) : null;
+    if (!parsed || typeof parsed !== 'object') return { total: 0, pages: {} };
+    return { total: Number(parsed.total) || 0, pages: parsed.pages && typeof parsed.pages === 'object' ? parsed.pages : {} };
+  } catch (e) {
+    return { total: 0, pages: {} };
+  }
+}
+function saveVisitorStats(stats) {
+  try { localStorage.setItem(ADMIN_STATS_KEY, JSON.stringify(stats)); } catch (e) {}
+}
+function recordPageVisit(page) {
+  const stats = getVisitorStats();
+  const key = page || 'home';
+  stats.total = (Number(stats.total) || 0) + 1;
+  stats.pages[key] = (Number(stats.pages[key]) || 0) + 1;
+  saveVisitorStats(stats);
+}
+
+async function sha256Hex(value) {
+  const bytes = new TextEncoder().encode(value);
+  const digest = await crypto.subtle.digest('SHA-256', bytes);
+  return [...new Uint8Array(digest)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function showAdminPasswordDialog() {
+  const dlg = $('#adminPwdDlg');
+  const input = $('#adminPwdInput');
+  const msg = $('#adminPwdMsg');
+  msg.textContent = '';
+  input.value = '';
+  dlg.showModal();
+  input.focus();
+}
+
+function closeAdminPasswordDialog() {
+  const dlg = $('#adminPwdDlg');
+  const input = $('#adminPwdInput');
+  const msg = $('#adminPwdMsg');
+  const btn = $('[data-act="toggle-admin-pwd"]');
+  msg.textContent = '';
+  input.value = '';
+  input.type = 'password';
+  if (btn) {
+    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="2.6" stroke="currentColor" stroke-width="1.8"/></svg>';
+    btn.setAttribute('aria-label', 'إظهار كلمة المرور');
+    btn.setAttribute('title', 'إظهار كلمة المرور');
+  }
+  if (dlg.open) dlg.close();
+}
+
+function showAdminNameDialog() {
+  const dlg = $('#adminNameDlg');
+  const input = $('#adminNameInput');
+  const msg = $('#adminNameMsg');
+  msg.textContent = '';
+  input.value = '';
+  dlg.showModal();
+  input.focus();
+}
+
+function closeAdminNameDialog() {
+  const dlg = $('#adminNameDlg');
+  const input = $('#adminNameInput');
+  const msg = $('#adminNameMsg');
+  msg.textContent = '';
+  input.value = '';
+  if (dlg.open) dlg.close();
+}
+
+async function validateAdminPassword() {
+  const input = $('#adminPwdInput');
+  const msg = $('#adminPwdMsg');
+  const value = String(input.value || '').trim();
+  if (!value) {
+    msg.classList.remove('ok');
+    msg.textContent = 'يرجى إدخال كلمة المرور.';
+    input.focus();
+    return false;
+  }
+  const hashedInput = await sha256Hex(value);
+  if (hashedInput !== ADMIN_PASSWORD_HASH) {
+    msg.classList.remove('ok');
+    msg.textContent = 'كلمة المرور غير صحيحة.';
+    input.value = '';
+    input.focus();
+    return false;
+  }
+  msg.classList.add('ok');
+  msg.textContent = 'تم التحقق من كلمة المرور بنجاح.';
+  return true;
+}
+
+function validateAdminName() {
+  const input = $('#adminNameInput');
+  const msg = $('#adminNameMsg');
+  const value = String(input.value || '').trim();
+  if (!value) {
+    msg.textContent = 'يرجى إدخال اسمك الكامل.';
+    input.focus();
+    return false;
+  }
+  saveAdminName(value);
+  msg.textContent = '';
+  return true;
+}
+
+function loadLocal() { try { const r = localStorage.getItem(LS_KEY); return r ? JSON.parse(r) : null; } catch (e) { state.canStore = false; return null; } }
+const API_URL = window.GOLD_NILE_API_URL || '';
+async function loadRemote() {
+  try {
+    const r = await fetch(API_URL + '/api/state', { cache: 'no-store' });
+    if (!r.ok) return null;
+    const j = await r.json();
+    return valid(j) ? j : null;
+  } catch (e) { return null; }
+}
+async function saveRemote() {
+  try {
+    const response = await fetch(API_URL + '/api/state', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(state.data)
+    });
+    if (!response.ok) return false;
+    state.source = 'sqlite';
+    return true;
+  } catch (e) { return false; }
+}
+async function saveLocal() {
+  let savedLocally = false;
+  try { localStorage.setItem(LS_KEY, JSON.stringify(state.data)); state.source = 'local'; savedLocally = true; } catch (e) { state.canStore = false; }
+  const savedToSqlite = await saveRemote();
+  return savedLocally || savedToSqlite;
+}
+async function commitData(message) {
+  const saved = await saveLocal();
+  if (!saved) {
+    render();
+    toast(`${message} تعذر الحفظ.`);
+    return;
+  }
+  render();
+  toast(state.source === 'sqlite' ? `${message} تم الحفظ في SQLite.` : `${message} تم الحفظ محليًا.`);
+}
+const valid = d => d && d.settings && Array.isArray(d.ledger) && Array.isArray(d.devices) && Array.isArray(d.milestones) && Array.isArray(d.steps);
+
+async function init() {
+  let d = await loadRemote();
+  if (valid(d)) state.source = 'sqlite'; else d = loadLocal();
+  if (valid(d) && state.source !== 'sqlite') state.source = 'local';
+  if (!d) {
+    try { const r = await fetch('data.json', { cache: 'no-store' }); if (r.ok) { const j = await r.json(); if (valid(j)) { d = j; state.source = 'file'; } } } catch (e) {}
+  }
+  state.data = d || structuredClone(DEFAULT);
+  state.data.employees ||= structuredClone(DEFAULT.employees || []);
+  state.data.tasks ||= structuredClone(DEFAULT.tasks || []);
+  state.data.documents ||= structuredClone(DEFAULT.documents || []);
+  state.data.governmentLetters ||= [];
+  state.data.users ||= [];
+  const departmentManagers = new Set();
+  state.data.employees.forEach(employee => {
+    employee.attendanceLog ||= [];
+    employee.isManager = employee.isManager ?? !departmentManagers.has(employee.department);
+    if (employee.isManager) departmentManagers.add(employee.department);
+    employee.salary ??= 0; employee.currency ||= 'USD'; employee.absence ||= '';
+    employee.bonuses ??= 0; employee.commissions ??= 0; employee.passportNumber ||= ''; employee.passportDoc ||= ''; employee.photo ||= '';
+  });
+  route(); render();
+  await saveRemote();
+}
+
+/* ============ الحسابات (كل الإجماليات تُشتق من البيانات) ============ */
+function lines(d) {
+  const S = d.settings, L = [];
+  d.ledger.forEach((it, i) => L.push({ label: it.title, cat: it.group, usd: it.usd, source: it.source, ceiling: !!it.ceiling, status: it.status, stage: it.stage, ref: 'ledger.' + i }));
+  d.devices.forEach((v, i) => {
+    const c = v.ceiling !== false, ref = 'devices.' + i;
+    if (v.price != null) L.push({ label: v.name, cat: 'equipment', usd: +v.price, source: 'investment', ceiling: c, status: v.priceKind === 'final' ? 'planned' : 'estimate', ref });
+    if (v.price != null && v.customsPct != null) L.push({ label: 'جمارك ' + v.name, cat: 'customs', usd: v.price * v.customsPct / 100, source: 'investment', ceiling: c, status: 'estimate', stage: 'customs', ref });
+    if (v.permit) L.push({ label: 'تصريح استيراد: ' + v.name, cat: 'permits', usd: S.permitFee, source: 'investment', ceiling: c, status: 'planned', stage: 'import', ref });
+    if (v.clearance) L.push({ label: 'تخليص جمركي: ' + v.name, cat: 'clearance', usd: S.clearanceFee, source: 'investment', ceiling: c, status: 'planned', stage: 'customs', ref });
+  });
+  return L;
+}
+function deviceCalc(v, S) {
+  const customs = (v.price != null && v.customsPct != null) ? v.price * v.customsPct / 100 : null;
+  const permit = v.permit ? S.permitFee : 0, clear = v.clearance ? S.clearanceFee : 0;
+  const total = (v.price || 0) + (customs || 0) + permit + clear;
+  return { customs, permit, clear, total, missingPrice: v.price == null, missingPct: v.customsPct == null };
+}
+function compute(d) {
+  const S = d.settings, L = lines(d);
+  const sum = f => L.filter(f).reduce((a, l) => a + (l.usd || 0), 0);
+  const T = { L, ceiling: S.investmentSAR / S.fx };
+  T.all = sum(() => true);
+  T.ceilingCost = sum(l => l.ceiling);
+  T.paid = sum(l => l.status === 'paid');
+  T.seedSpent = sum(l => l.source === 'seed' && l.status === 'paid');
+  T.seedAll = sum(l => l.source === 'seed');
+  T.personal = sum(l => l.source === 'personal');
+  T.personalPaid = sum(l => l.source === 'personal' && l.status === 'paid');
+  T.personalPending = T.personal - T.personalPaid;
+  T.seedUnalloc = S.seedUSD - T.seedAll - S.reservedUSD;
+  T.remaining = T.ceiling - T.ceilingCost;
+  T.over = T.ceilingCost > T.ceiling;
+  T.receivedUSD = S.receivedSAR / S.fx;
+  T.segs = Object.keys(CAT).map(k => ({ k, l: CAT[k], c: CATCOL[k], v: sum(l => l.ceiling && l.cat === k) }));
+  T.byCat = Object.keys(CAT).map(k => ({ k, l: CAT[k], all: sum(l => l.cat === k), ceil: sum(l => l.cat === k && l.ceiling) }));
+  T.missing = [];
+  d.ledger.forEach((it, i) => { if (it.usd == null) T.missing.push(`${it.title} — القيمة لم تُعتمد بعد`); });
+  d.devices.forEach(v => {
+    if (v.price == null) T.missing.push(`${v.name} — السعر غير محدد`);
+    if (v.customsPct == null) T.missing.push(`${v.name} — نسبة الجمارك غير محددة`);
+  });
+  T.stageCost = id => L.filter(l => l.stage === id).reduce((a, l) => a + (l.usd || 0), 0);
+  T.nDev = d.devices.length;
+  return T;
+}
+
+/* ============ حقول العرض/التعديل ============ */
+function F(path, o = {}) {
+  const v = getPath(state.data, path), t = o.type || 'text', A = state.admin;
+  if (!A) {
+    if (t === 'usd') return usd(v);
+    if (t === 'money') return money(v, o.unit);
+    if (t === 'pct') return v == null ? '<span class="undef">غير محددة</span>' : `<bdi>${v}%</bdi>`;
+    if (t === 'select') return o.chip ? chip(v, o.opts[v] || '') : esc(o.opts[v] || '');
+    if (t === 'bool') return v ? 'نعم' : 'لا';
+    if (t === 'date') return v ? `<bdi>${esc(v)}</bdi>` : '—';
+    return v ? esc(v) : (o.empty ?? '—');
+  }
+  const a = `data-path="${path}"`;
+  if (t === 'usd' || t === 'money' || t === 'pct') return `<input class="in num" type="number" step="any" inputmode="decimal" ${a} data-type="num" placeholder="غير محدد" value="${v ?? ''}" aria-label="${esc(o.label || '')}">`;
+  if (t === 'select') return `<select class="in sel" ${a} data-type="text" aria-label="${esc(o.label || '')}">${Object.entries(o.opts).map(([k, l]) => `<option value="${k}"${k === v ? ' selected' : ''}>${l}</option>`).join('')}</select>`;
+  if (t === 'bool') return `<input type="checkbox" ${a} data-type="bool"${v ? ' checked' : ''} aria-label="${esc(o.label || '')}">`;
+  if (t === 'date') return `<input class="in" type="date" ${a} data-type="text" value="${esc(v || '')}" aria-label="${esc(o.label || '')}">`;
+  if (t === 'area') return `<textarea class="in" rows="3" ${a} data-type="text" aria-label="${esc(o.label || '')}">${esc(v || '')}</textarea>`;
+  return `<input class="in" ${a} data-type="text" value="${esc(v || '')}" aria-label="${esc(o.label || '')}">`;
+}
+function docCell(ref) {
+  const src = getPath(state.data, ref + '.doc');
+  let h = '';
+  if (src) h += `<button class="btn sm" data-act="doc" data-ref="${ref}">عرض المستند</button>`;
+  else if (!state.admin) h += '<span class="undef">لا يوجد مستند</span>';
+  if (state.admin) h += `<input class="in docin" dir="ltr" data-path="${ref}.doc" data-type="doc" placeholder="مصدر المستند: رابط أو مسار" value="${esc(src || '')}" aria-label="مصدر المستند">`;
+  return h;
+}
+const delBtn = (list, i) => state.admin ? `<button class="btn sm danger" data-act="del" data-list="${list}" data-i="${i}">حذف</button>` : '';
+const saveBtn = () => state.admin ? '<button class="btn sm" data-act="save">حفظ</button>' : '';
+
+/* ============ مكونات ============ */
+const row = (l, v, s = '') => `<div class="row"><dt>${l}</dt><dd>${v}</dd>${s ? `<div class="s">${s}</div>` : ''}</div>`;
+
+function gauge(T) {
+  const max = Math.max(T.ceiling, T.ceilingCost) * (T.over ? 1.06 : 1);
+  const p = v => (v / max * 100).toFixed(3) + '%';
+  const segs = T.segs.filter(s => s.v > 0).map(s => `<span style="width:${p(s.v)};background:${s.c}" title="${esc(s.l)}"></span>`).join('');
+  const legend = T.segs.filter(s => s.v > 0).map(s => `<li><i style="background:${s.c}"></i>${s.l}: ${usd(s.v)}</li>`).join('');
+  const note = T.over
+    ? `<p class="gnote bad"><strong>تجاوز السقف بمقدار ${usd(T.ceilingCost - T.ceiling)}.</strong> التكلفة المحتسبة على السقف ${usd(T.ceilingCost)} مقابل سقف ${usd(T.ceiling)}.</p>`
+    : `<p class="gnote">المحتسب على سقف الاستثمار <strong>${usd(T.ceilingCost)}</strong> من ${usd(T.ceiling)}، والمتبقي تحت السقف <strong>${usd(T.remaining)}</strong>.</p>`;
+  return `<div class="gauge"><div class="gbar" role="img" aria-label="التكلفة المحتسبة على السقف مقابل سقف الاستثمار"><div class="segs">${segs}</div><div class="cap" style="inset-inline-start:${(T.ceiling / max * 100).toFixed(3)}%"><em>السقف ${nf.format(Math.round(T.ceiling))}</em></div></div>${note}<ul class="legend">${legend}</ul></div>`;
+}
+function missingNotice(T, link = true) {
+  if (!T.missing.length) return '';
+  return `<div class="notice"><strong>الإجمالي غير مكتمل:</strong> توجد ${nf.format(T.missing.length)} بنود لم يُحدد رقمها، ولم يُفترض لها أي سعر أو نسبة، لذلك التكلفة الفعلية النهائية أعلى من المعروض.
+  <ul>${T.missing.slice(0, 8).map(m => `<li>${esc(m)}</li>`).join('')}</ul>${link ? '<p style="margin:8px 0 0"><a href="#/open">عرض النقاط غير المحسومة</a></p>' : ''}</div>`;
+}
+function ledgerTable(group, T) {
+  const A = state.admin, led = state.data.ledger;
+  const idx = led.map((_, i) => i).filter(i => led[i].group === group);
+  const body = idx.map(i => {
+    const p = 'ledger.' + i, it = led[i];
+    return `<tr${it.usd == null ? ' class="warnrow"' : ''}>
+      <td>${F(p + '.title', { label: 'البند' })}</td>
+      <td class="n">${F(p + '.usd', { type: 'usd', label: 'المبلغ' })}</td>
+      <td>${F(p + '.status', { type: 'select', opts: STATUS, chip: 1, label: 'الحالة' })}</td>
+      <td class="note">${F(p + '.note', { label: 'ملاحظة', empty: '' })}</td>
+      <td>${docCell(p)}</td>
+      ${A ? `<td>${F(p + '.ceiling', { type: 'bool', label: 'يُحتسب على السقف' })}</td><td>${saveBtn()}${delBtn('ledger', i)}</td>` : ''}
+    </tr>`;
+  }).join('');
+  const tot = idx.reduce((a, i) => a + (led[i].usd || 0), 0);
+  return `<div class="scroll"><table class="tbl"><thead><tr><th>البند</th><th>المبلغ</th><th>الحالة</th><th>ملاحظة</th><th>المستند</th>${A ? '<th>يُحتسب على السقف</th><th></th>' : ''}</tr></thead>
+    <tbody>${body}<tr class="sum"><td>الإجمالي</td><td class="n">${usd(tot)}</td><td colspan="${A ? 5 : 3}"></td></tr></tbody></table></div>
+    ${A ? `<div class="addrow"><button class="btn sm" data-act="add-ledger" data-group="${group}">إضافة بند</button></div>` : ''}`;
+}
+function ceilingHint() { return state.admin ? '<p class="lead" style="margin-top:8px">عمود «يُحتسب على السقف» يحدد هل يدخل البند في مقارنة التكلفة بسقف الاستثمار.</p>' : ''; }
+
+/* ============ الصفحات ============ */
+const PAGES = {};
+
+PAGES.home = () => {
+  const d = state.data, S = d.settings, T = compute(d), ms = d.milestones;
+  const doing = ms.filter(m => m.status === 'doing'), next = ms.find(m => m.status === 'next');
+  const done = ms.filter(m => m.status === 'done').length;
+  const flowMax = Math.max(T.all, 1);
+  const flows = [
+    ['مصروفات مبلغ التأسيس (دين)', T.seedSpent, '#6B7F7D'],
+    ['مساهمات صاحب الشركة', T.personal, '#B4842A'],
+    ['مخطط ومقدَّر من الاستثمار', T.L.filter(l => l.source === 'investment').reduce((a, l) => a + (l.usd || 0), 0), '#1E6B67']
+  ].map(([l, v, c]) => `<div class="f"><span>${l}</span><div class="track"><i style="width:${(v / flowMax * 100).toFixed(2)}%;background:${c}"></i></div><b>${usd(v)}</b></div>`).join('');
+  return `
+  <section class="hero ${state.first ? 'first' : ''}" aria-label="ملخص التكلفة">
+    <div class="hero-total">
+      <div class="lbl">إجمالي التكلفة المحسوبة حتى الآن</div>
+      <span class="big"><bdi>${nf.format(Math.round(T.all))}</bdi><span class="cur">دولار</span></span>
+      <div class="sub">مجموع كل الأرقام المعتمدة والمقدَّرة (مصروفات، ومساهمات، وتكلفة مخططة). يتغير تلقائيًا مع أي رقم يُعتمد.</div>
+    </div>
+    ${gauge(T)}
+  </section>
+  ${T.over ? '' : ''}${missingNotice(T)}
+
+  <section class="sec"><h2>الوضع المالي</h2>
+    <dl class="rows" style="margin:8px 0 0">
+      ${row('الاستثمار المتفق عليه', `${money(S.investmentSAR, 'ريال')} <span class="cur">≈</span> ${usd(T.ceiling)}`, `على أساس 1 دولار = ${S.fx} ريال`)}
+      ${row('المستلم من الاستثمار', `${money(S.receivedSAR, 'ريال')}`, `يعادل ${usd(T.receivedUSD)}`)}
+      ${row('المصروف فعليًا (مدفوع)', usd(T.paid), `منها ${usd(T.seedSpent)} من مبلغ التأسيس و${usd(T.personalPaid)} من مال صاحب الشركة`)}
+      ${row(T.over ? 'تجاوز سقف الاستثمار' : 'المتبقي تحت سقف الاستثمار', T.over ? `<span style="color:var(--bad)">${usd(T.ceilingCost - T.ceiling)}</span>` : usd(T.remaining), 'بعد احتساب البنود المخططة والمقدَّرة المعلَّمة على السقف')}
+      ${row('المساهمات الشخصية', usd(T.personal), `مساهمة وليست دينًا${T.personalPending ? ` — منها ${nf.format(T.personalPending)} دولار لم تُدفع بعد` : ''}`)}
+      ${row('الديون على الشركة', usd(S.seedUSD), 'مبلغ التأسيس المستلم من الشركاء، ولا يُخصم من الاستثمار')}
+      ${row('محفوظ للمقر الدائم', money(S.reservedSDG, 'جنيه سوداني'), `يعادل نحو ${usd(S.reservedUSD)}، محفوظ ولم يُصرف`)}
+    </dl>
+    <p class="lead" style="margin-top:14px"><a href="#/finance">تفاصيل المصروفات والمساهمات ←</a></p>
+  </section>
+
+  <section class="sec"><h2>من أين جاءت التكلفة</h2>
+    <p class="lead">توزيع الإجمالي المحسوب حسب مصدر التمويل.</p>
+    <div class="flow">${flows}</div>
+  </section>
+
+  <section class="sec"><h2>حالة المشروع</h2>
+    <p class="lead">${esc(d.company.status)}</p>
+    <div class="stages">
+      <div><h3>المرحلة الحالية</h3><p class="v">${doing.length ? doing.map(m => esc(m.title)).join('، ') : '—'}</p></div>
+      <div><h3>المرحلة القادمة</h3><p class="v">${next ? esc(next.title) : '—'}</p></div>
+    </div>
+    <div class="dots" role="img" aria-label="أُنجز ${done} من ${ms.length} مرحلة">${ms.map(m => `<i class="${m.status}" title="${esc(m.title)}"></i>`).join('')}</div>
+    <p class="lead" style="margin-top:8px">أُنجز ${done} من ${ms.length} مرحلة. <a href="#/stages">عرض المراحل ←</a></p>
+  </section>
+
+  <section class="sec"><h2>المهام الموكلة للأقسام</h2>
+    <p class="lead">المهام الحالية موزعة على الإدارات والموظفين. <a href="#/tasks">عرض كل المهام ←</a></p>
+    <div class="scroll"><table class="tbl"><thead><tr><th>المهمة</th><th>الإدارة</th><th>المسؤول</th><th>الحالة</th></tr></thead><tbody>${(d.tasks || []).slice(0, 6).map(task => `<tr><td>${esc(task.title)}</td><td>${esc(task.department)}</td><td>${esc(task.assignee)}</td><td>${esc(task.status)}</td></tr>`).join('') || '<tr><td colspan="4">لا توجد مهام</td></tr>'}</tbody></table></div>
+  </section>`;
+};
+
+PAGES.finance = () => {
+  const d = state.data, S = d.settings, T = compute(d), A = state.admin;
+  const sf = (k, l, type = 'num') => `<label>${l}<input class="in" type="number" step="any" data-path="settings.${k}" data-type="num" value="${S[k] ?? ''}"></label>`;
+  return `
+  <h2>المالية</h2>
+  <p class="lead">كل رقم هنا مرتبط بباقي اللوحة؛ أي تعديل ينعكس فورًا على الإجماليات والمؤشرات.</p>
+  ${A ? `<div class="form">${sf('investmentSAR', 'الاستثمار المتفق عليه (ريال)')}${sf('receivedSAR', 'المستلم من الاستثمار (ريال)')}${sf('fx', 'سعر الصرف (ريال لكل دولار)')}${sf('seedUSD', 'مبلغ التأسيس (دولار)')}${sf('reservedSDG', 'المحفوظ للمقر الدائم (جنيه سوداني)')}${sf('reservedUSD', 'ما يعادله بالدولار')}${sf('permitFee', 'رسم تصريح الاستيراد لكل جهاز (دولار)')}${sf('clearanceFee', 'رسم التخليص لكل جهاز (دولار)')}<label>رابط واتساب للاستفسارات<input class="in" dir="ltr" data-path="settings.whatsapp" data-type="text" value="${esc(S.whatsapp || '')}"></label><label>مسار تخزين المستندات (لروابط storage://)<input class="in" dir="ltr" data-path="settings.storageBase" data-type="text" value="${esc(S.storageBase || '')}"></label></div>` : ''}
+
+  <section class="sec"><h3>الاستثمار</h3>
+    <dl class="rows">
+      ${row('الاستثمار المتفق عليه', `${money(S.investmentSAR, 'ريال')} <span class="cur">≈</span> ${usd(T.ceiling)}`, `1 دولار = ${S.fx} ريال`)}
+      ${row('المستلم من الاستثمار', money(S.receivedSAR, 'ريال'), `يعادل ${usd(T.receivedUSD)}`)}
+      ${row('المتبقي للاستلام', money(S.investmentSAR - S.receivedSAR, 'ريال'), '')}
+      ${row('الهدف', 'إبقاء التكلفة قريبة من قيمة الاستثمار', 'لا يُتجاوز السقف إلا بشكل محدود جدًا إذا أصبح التجاوز ضروريًا')}
+    </dl>
+  </section>
+
+  <section class="sec"><h3>مبلغ التأسيس (5,000 دولار): دين على الشركة</h3>
+    <p class="lead">استُلم من الشركاء في البداية كدفعة تأسيس وجدية. لا يُخصم من مبلغ الاستثمار، ويُعامل كدين على الشركة.</p>
+    ${ledgerTable('setup', T)}
+    <dl class="rows" style="margin-top:14px">
+      ${row('مبلغ محفوظ للمقر الدائم', `${money(S.reservedSDG, 'جنيه سوداني')}`, `يعادل نحو ${usd(S.reservedUSD)}، محفوظ حاليًا بالجنيه السوداني`)}
+      ${row('غير موزع من المبلغ', `<span style="color:${T.seedUnalloc < 0 ? 'var(--bad)' : 'inherit'}">${usd(T.seedUnalloc)}</span>`, `${usd(S.seedUSD)} − المصروف ${usd(T.seedAll)} − المحفوظ ${usd(S.reservedUSD)}`)}
+    </dl>
+  </section>
+
+  <section class="sec"><h3>المساهمات الشخصية لصاحب الشركة</h3>
+    <p class="lead">مساهمة شخصية في الشركة وليست دينًا عليها. الإجمالي المسجل ${usd(T.personal)}${T.personalPending ? `، منه ${usd(T.personalPending)} لم يُدفع بعد` : ''}.</p>
+    ${ledgerTable('personal', T)}
+    <div class="notice info"><strong>تفريق معتمد مبدئيًا:</strong> إيجار محل/مقر كوستي للشركة 300 دولار لثلاثة أشهر (من مبلغ التأسيس)، أما إيجار الشقة الشخصية في الخرطوم فـ600 دولار لثلاثة أشهر وهو مساهمة شخصية وليس إيجار مقر للشركة. هذا التفريق ما زال ضمن النقاط غير المحسومة.</div>
+  </section>
+
+  <section class="sec"><h3>مراقبة الميزانية</h3>
+    <p class="lead">مقارنة التكلفة بسقف الاستثمار ${usd(T.ceiling)}. لا تدخل في المقارنة إلا البنود المعلَّمة على السقف (الافتراضي: بنود الاستثمار المخططة، دون مبلغ التأسيس والمساهمات الشخصية).</p>
+    <div class="scroll"><table class="tbl"><thead><tr><th>الفئة</th><th>الإجمالي</th><th>المحتسب على السقف</th></tr></thead><tbody>
+      ${T.byCat.filter(c => c.all > 0).map(c => `<tr><td>${c.l}</td><td class="n">${usd(c.all)}</td><td class="n">${usd(c.ceil)}</td></tr>`).join('')}
+      <tr class="sum"><td>الإجمالي</td><td class="n">${usd(T.all)}</td><td class="n">${usd(T.ceilingCost)}</td></tr>
+      <tr><td>سقف الاستثمار</td><td></td><td class="n">${usd(T.ceiling)}</td></tr>
+      <tr><td>${T.over ? '<b style="color:var(--bad)">تجاوز السقف</b>' : 'المتبقي تحت السقف'}</td><td></td><td class="n" style="${T.over ? 'color:var(--bad)' : ''}">${usd(T.over ? T.ceilingCost - T.ceiling : T.remaining)}</td></tr>
+    </tbody></table></div>
+    ${missingNotice(T)}
+  </section>`;
+};
+
+PAGES.stages = () => {
+  const d = state.data, T = compute(d), A = state.admin;
+  const items = d.milestones.map((m, i) => {
+    const p = 'milestones.' + i;
+    const cost = m.costRef ? T.stageCost(m.costRef) : m.cost;
+    return `<li class="${m.status}"><span class="mk"></span>
+    <details class="ms" ${A ? 'open' : ''}><summary><span>${esc(m.title)}</span>${chip(m.status, MSTAT[m.status])}</summary>
+      <div class="ms-body">
+        ${A ? `<div class="kv"><span>العنوان</span><span>${F(p + '.title', { label: 'العنوان' })}</span></div><div class="kv"><span>الحالة</span><span>${F(p + '.status', { type: 'select', opts: MSTAT, label: 'الحالة' })}</span></div>` : ''}
+        <div class="kv"><span>الوصف</span><span>${F(p + '.desc', { type: 'area', label: 'الوصف' })}</span></div>
+        <div class="kv"><span>تاريخ البداية</span><span>${F(p + '.start', { type: 'date', label: 'تاريخ البداية' })}</span></div>
+        <div class="kv"><span>تاريخ الإنجاز</span><span>${F(p + '.done', { type: 'date', label: 'تاريخ الإنجاز' })}</span></div>
+        <div class="kv"><span>التكلفة</span><span>${m.costRef ? (cost ? usd(cost) + ' <span class="undef">(محسوبة تلقائيًا)</span>' : '—') : F(p + '.cost', { type: 'usd', label: 'التكلفة' })}</span></div>
+        <div class="kv"><span>المستند</span><span>${docCell(p)}</span></div>
+        ${A ? `<div>${saveBtn()}${delBtn('milestones', i)}</div>` : ''}
+      </div></details></li>`;
+  }).join('');
+  return `<h2>المراحل</h2>
+  <p class="lead">اضغط على أي مرحلة لعرض التاريخ والتكلفة والمستند.</p>
+  <ol class="tl">${items}</ol>
+  ${A ? '<div class="addrow"><button class="btn sm" data-act="add-ms">إضافة مرحلة</button></div>' : ''}`;
+};
+
+PAGES.equipment = () => {
+  const d = state.data, S = d.settings, A = state.admin, T = compute(d);
+  let tp = 0, tc = 0, tperm = 0, tcl = 0, tt = 0;
+  const rows = d.devices.map((v, i) => {
+    const p = 'devices.' + i, c = deviceCalc(v, S);
+    tp += v.price || 0; tc += c.customs || 0; tperm += c.permit; tcl += c.clear; tt += c.total;
+    const incomplete = c.missingPrice || c.missingPct;
+    return `<tr class="${incomplete ? 'warnrow' : ''}">
+      <td><b>${F(p + '.name', { label: 'اسم الجهاز' })}</b>${A ? `<div style="margin-top:6px">${F(p + '.model', { label: 'الموديل' })}</div>` : (v.model ? ` <bdi class="undef" dir="ltr">${esc(v.model)}</bdi>` : '')}
+        ${incomplete ? `<div>${chip('estimate', 'بيانات ناقصة')}</div>` : ''}</td>
+      <td class="n">${F(p + '.price', { type: 'usd', label: 'السعر' })}${A ? `<div style="margin-top:6px">${F(p + '.priceKind', { type: 'select', opts: KIND, label: 'نوع السعر' })}</div>` : (v.price != null ? `<div>${chip('estimate', KIND[v.priceKind] || '')}</div>` : '')}</td>
+      <td class="n">${F(p + '.customsPct', { type: 'pct', label: 'نسبة الجمارك' })}</td>
+      <td class="n">${c.customs == null ? '<span class="undef">غير محسوب</span>' : usd(c.customs)}</td>
+      <td class="n">${A ? F(p + '.permit', { type: 'bool', label: 'تصريح استيراد' }) : ''} ${usd(c.permit)}</td>
+      <td class="n">${A ? F(p + '.clearance', { type: 'bool', label: 'تخليص' }) : ''} ${usd(c.clear)}</td>
+      <td class="n">${usd(c.total)}${incomplete ? '<div class="undef">لا يشمل الناقص</div>' : ''}</td>
+      <td>${docCell(p)}</td>
+      ${A ? `<td>${F(p + '.ceiling', { type: 'bool', label: 'يُحتسب على السقف' })}</td><td>${saveBtn()}${delBtn('devices', i)}</td>` : ''}
+    </tr>
+    <tr class="noterow${incomplete ? ' warnrow' : ''}"><td colspan="${A ? 10 : 8}">${F(p + '.note', { type: 'area', label: 'ملاحظات', empty: '' })}</td></tr>`;
+  }).join('');
+  return `<h2>المعدات</h2>
+  <p class="lead">المعدات المعتمدة للمرحلة الحالية. الجمارك والتصاريح والتخليص تُحسب تلقائيًا لكل جهاز، وأي جهاز يُضاف تدخل تكلفته في كل الإجماليات.</p>
+  <div class="notice info">${esc(d.cancelled)}${A ? `<div style="margin-top:8px">${F('cancelled', { type: 'area', label: 'ملاحظة الإلغاء' })}</div>` : ''}</div>
+  <div class="scroll"><table class="tbl" style="min-width:900px"><thead><tr><th>الجهاز</th><th>السعر</th><th>نسبة الجمارك</th><th>الجمارك</th><th>تصريح الاستيراد</th><th>التخليص</th><th>الإجمالي المعروف</th><th>المستند</th>${A ? '<th>على السقف</th><th></th>' : ''}</tr></thead>
+    <tbody>${rows}
+    <tr class="sum"><td>الإجمالي (${T.nDev} أجهزة)</td><td class="n">${usd(tp)}</td><td></td><td class="n">${usd(tc)}</td><td class="n">${usd(tperm)}</td><td class="n">${usd(tcl)}</td><td class="n">${usd(tt)}</td><td colspan="${A ? 3 : 1}"></td></tr></tbody></table></div>
+  ${A ? '<div class="addrow"><button class="btn sm" data-act="add-dev">إضافة جهاز</button></div>' : ''}
+  ${T.missing.filter(m => !m.includes('القيمة لم تُعتمد')).length ? `<div class="notice"><strong>لا تُفترض أسعار ولا نسب جمارك غير محددة.</strong> الأجهزة الناقصة تظهر بلا رقم حتى يُعتمد سعرها أو نسبتها، وعندها تُحسب تلقائيًا.</div>` : ''}
+  <p class="lead" style="margin-top:14px">رسم تصريح الاستيراد ${usd(S.permitFee)} والتخليص ${usd(S.clearanceFee)} لكل جهاز، حسب التقدير السابق. يتحدث العدد تلقائيًا مع عدد الأجهزة الفعلي.</p>`;
+};
+
+PAGES.licensing = () => {
+  const d = state.data, A = state.admin, T = compute(d);
+  const steps = d.steps.map((s, i) => {
+    const p = 'steps.' + i;
+    return `<li class="${s.status}"><div>${A ? F(p + '.title', { label: 'الخطوة' }) : esc(s.title)}</div>
+      <div class="act">${F(p + '.status', { type: 'select', opts: MSTAT, chip: 1, label: 'الحالة' })}${docCell(p)}${saveBtn()}${delBtn('steps', i)}</div></li>`;
+  }).join('');
+  const letter = d.solvencyLetter.doc ? resolveDoc(d.solvencyLetter.doc) : null;
+  const isImg = letter && /\.(jpe?g|png|webp|gif|avif)$/i.test(letter.split('?')[0].split('#')[0]);
+  const slot = letter
+    ? (isImg ? `<div class="slot"><img src="${esc(letter)}" alt="خطاب موجه إلى وزارة المعادن" loading="lazy"></div>` : `<div class="slot"><div><p>تم ربط الخطاب.</p><button class="btn sm" data-act="doc" data-ref="solvencyLetter">عرض المستند</button></div></div>`)
+    : `<div class="slot"><p>سيظهر هنا الخطاب الموجه إلى وزارة المعادن<br>عند ربط رابط الصورة${A ? ' في الحقل أدناه' : ''}.</p></div>`;
+  const nd = d.devices.filter(v => v.permit).length, nc = d.devices.filter(v => v.clearance).length;
+  return `<h2>التراخيص والرسوم</h2>
+  <p class="lead">المسار إلى ترخيص معمل فحص الذهب لدى وزارة المعادن، ثم الاستيراد والتشغيل.</p>
+  <ol class="steps">${steps}</ol>
+  ${A ? '<div class="addrow"><button class="btn sm" data-act="add-step">إضافة خطوة</button></div>' : ''}
+
+  <section class="sec two">
+    <div>
+      <h3>الملاءة المالية</h3>
+      <p>الشرط الأصلي المذكور 20,000 دولار. المطلوب في التخطيط حساب ملاءة واقعية مرتبطة بالاحتياجات الفعلية بدل مبلغ أكبر من الحاجة. <b>القيمة النهائية لم تُعتمد بعد.</b></p>
+      ${A ? `<div style="margin-top:8px">${docCell('solvencyLetter')}</div>` : (d.solvencyLetter.doc ? `<div style="margin-top:8px">${docCell('solvencyLetter')}</div>` : '')}
+    </div>
+    <div>${slot}</div>
+  </section>
+
+  <section class="sec"><h3>رسوم الترخيص والاستيراد</h3>
+    ${ledgerTable('fees', T)}
+    ${ceilingHint()}
+    <div class="scroll"><table class="tbl"><thead><tr><th>بند محسوب تلقائيًا من المعدات</th><th>العدد</th><th>الرسم لكل جهاز</th><th>الإجمالي</th></tr></thead><tbody>
+      <tr><td>تصاريح استيراد الأجهزة</td><td class="n"><bdi>${nd}</bdi></td><td class="n">${usd(d.settings.permitFee)}</td><td class="n">${usd(nd * d.settings.permitFee)}</td></tr>
+      <tr><td>التخليص الجمركي</td><td class="n"><bdi>${nc}</bdi></td><td class="n">${usd(d.settings.clearanceFee)}</td><td class="n">${usd(nc * d.settings.clearanceFee)}</td></tr>
+    </tbody></table></div>
+    <p class="lead" style="margin-top:8px">بعد تقليص المعدات يجب أن يطابق العدد الأجهزة الفعلية. يمكن تعديله من صفحة <a href="#/equipment">المعدات</a>.</p>
+  </section>
+
+  <section class="sec"><h3>تجهيز مقر المعمل</h3>
+    ${ledgerTable('premises', T)}
+  </section>`;
+};
+
+function registry() {
+  const d = state.data, R = [];
+  d.ledger.forEach((x, i) => R.push({ g: GROUP[x.group], l: x.title, ref: 'ledger.' + i }));
+  d.devices.forEach((x, i) => R.push({ g: 'المعدات', l: x.name, ref: 'devices.' + i }));
+  d.milestones.forEach((x, i) => R.push({ g: 'المراحل', l: x.title, ref: 'milestones.' + i }));
+  d.steps.forEach((x, i) => R.push({ g: 'خطوات الترخيص', l: x.title, ref: 'steps.' + i }));
+  R.push({ g: 'التراخيص والرسوم', l: 'خطاب وزارة المعادن (الملاءة المالية)', ref: 'solvencyLetter' });
+  return R;
+}
+PAGES.visitors = () => {
+  if (!state.admin) return `<h2>الصفحة غير متاحة</h2><p class="lead">تقارير الزوار متاحة من وضع الإدارة فقط.</p>`;
+  const stats = getVisitorStats();
+  const pageEntries = Object.entries(stats.pages || {}).sort((a, b) => b[1] - a[1]);
+  const rows = pageEntries.length
+    ? pageEntries.map(([page, count]) => `<tr><td>${esc(PAGE_LABEL[page] || page)}</td><td class="n">${count}</td></tr>`).join('')
+    : `<tr><td>لا توجد زيارات مسجلة</td><td class="n">0</td></tr>`;
+  return `<h2>تقارير الزوار</h2>
+  <p class="lead">هذا تقرير منفصل يعرض عدد الزيارات لكل صفحة داخل لوحة الشركاء، ويُعرض بشكل مستقل عن شريط الإدارة.</p>
+  <div class="admin-analytics" style="max-width:720px; margin-top:12px;">
+    <div class="analytics-head"><strong>إحصاءات الزوار</strong><span>${stats.total || 0} زيارة</span></div>
+    <div class="analytics-grid">
+      <div class="stat-box"><span>إجمالي الزيارات</span><strong>${stats.total || 0}</strong></div>
+      <div class="stat-box"><span>أكثر صفحة</span><strong>${pageEntries.length ? esc(PAGE_LABEL[pageEntries[0][0]] || pageEntries[0][0]) : 'لا توجد'}</strong></div>
+    </div>
+  </div>
+  <div class="scroll" style="margin-top:18px"><table class="tbl"><thead><tr><th>الصفحة</th><th>عدد الزيارات</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+};
+
+PAGES.banking = () => {
+  const b = state.data.banking || { accounts: [], journal: [], transfers: [] };
+  const fmt = n => Number(n || 0).toLocaleString('en-US', { maximumFractionDigits: 0 });
+  const totals = Object.entries(b.accounts.reduce((acc, row) => { acc[row.currency] = (acc[row.currency] || 0) + Number(row.balance || 0); return acc; }, {}))
+    .map(([currency, total]) => `<div class="stat-box"><span>${esc(currency)}</span><strong>${fmt(total)}</strong></div>`)
+    .join('') || '<div class="stat-box"><span>لا يوجد</span><strong>0</strong></div>'
+;
+  const chart = (title, items) => {
+    const max = Math.max(...items.map(item => item.value), 0);
+    const rows = items.length ? items.map(item => `<div class="chart-row">
+      <span class="chart-label">${esc(item.label)}</span>
+      <span class="chart-track"><span class="chart-bar ${item.kind || ''}" style="--bar-width:${max ? (item.value / max * 100).toFixed(1) : 0}%"></span></span>
+      <span class="chart-value">${fmt(item.value)}</span>
+    </div>`).join('') : '<p class="lead">لا توجد بيانات بعد.</p>';
+    return `<div class="bank-chart"><h4>${title}</h4>${rows}</div>`;
+  };
+  const balanceItems = b.accounts.map(account => ({
+    label: `${account.bank || 'بنك غير محدد'} - ${account.currency || '—'}`,
+    value: Number(account.balance || 0)
+  }));
+  const journalByCurrency = b.journal.reduce((all, row) => {
+    const currency = row.currency || '—';
+    const direction = row.direction === 'out' ? 'out' : 'in';
+    all[currency] ||= { in: 0, out: 0 };
+    all[currency][direction] += Number(row.amount || 0);
+    return all;
+  }, {});
+  const journalItems = Object.entries(journalByCurrency).flatMap(([currency, values]) => [
+    { label: `${currency} - داخل`, value: values.in, kind: 'in' },
+    { label: `${currency} - خارج`, value: values.out, kind: 'out' }
+  ]);
+  const transferByCurrency = b.transfers.reduce((all, row) => {
+    const currency = row.currency || '—';
+    const direction = row.direction === 'out' ? 'out' : 'in';
+    all[currency] ||= { in: 0, out: 0 };
+    all[currency][direction] += Number(row.amount || 0);
+    return all;
+  }, {});
+  const transferItems = Object.entries(transferByCurrency).flatMap(([currency, values]) => [
+    { label: `${currency} - داخلة`, value: values.in, kind: 'in' },
+    { label: `${currency} - خارجية`, value: values.out, kind: 'out' }
+  ]);
+  const charts = `<div class="bank-charts">
+    ${chart('الأرصدة حسب البنك والعملة', balanceItems)}
+    ${chart('حركة دفتر اليومية', journalItems)}
+    ${chart('الحوالات الداخلة والخارجية', transferItems)}
+  </div>`;
+
+  const renderAccountRow = (acc, i) => `<tr>
+    <td>${esc(acc.bank)}</td>
+    <td>${esc(acc.accountNo)}</td>
+    <td>${esc(acc.currency)}</td>
+    <td>${esc(acc.purpose || '—')}</td>
+    <td class="n">${fmt(acc.balance)}</td>
+    <td>${esc(acc.iban || '—')}</td>
+    <td>${esc(acc.notes || '—')}</td>
+    ${state.admin ? `<td>${delBtn('banking.accounts', i)}</td>` : ''}
+  </tr>`;
+  const bankGroups = Object.entries(b.accounts.reduce((groups, account, index) => {
+    const key = account.bank || 'بنك غير محدد';
+    (groups[key] ||= []).push({ account, index });
+    return groups;
+  }, {}));
+  const accountTables = bankGroups.length ? bankGroups.map(([bankName, rows]) => `<section class="bank-group">
+    <div class="bank-group-head"><h4>${esc(bankName)}</h4><span>${rows.length} حسابات بالعملات</span></div>
+    <div class="scroll"><table class="tbl"><thead><tr><th>اسم البنك</th><th>رقم الحساب</th><th>العملة</th><th>الرصيد</th><th>الغرض</th><th>IBAN</th><th>ملاحظات</th>${state.admin ? '<th></th>' : ''}</tr></thead><tbody>${rows.map(({ account, index }) => renderAccountRow(account, index)).join('')}</tbody></table></div>
+    ${state.admin ? `<div class="addrow"><button class="btn sm" data-act="add-bank-account" data-bank="${esc(bankName)}">إضافة حساب بعملة أخرى في هذا البنك</button></div>` : ''}
+  </section>`).join('') : '<p class="notice">لا توجد حسابات مسجلة.</p>';
+
+  const journalRows = b.journal.length ? b.journal.map((row, i) => `<tr>
+    <td>${esc(row.date || '—')}</td>
+    <td>${esc(row.type)}</td>
+    <td>${esc(row.bank)}</td>
+    <td>${esc(row.currency)}</td>
+    <td class="n">${fmt(row.amount)}</td>
+    <td>${esc(row.description)}</td>
+    <td>${row.direction === 'in' ? '<span class="chip paid">داخل</span>' : '<span class="chip estimate">خارج</span>'}</td>
+    ${state.admin ? `<td>${delBtn('banking.journal', i)}</td>` : ''}
+  </tr>`).join('') : `<tr><td colspan="${state.admin ? 8 : 7}">لا توجد قيود يومية</td></tr>`;
+
+  const transferRows = b.transfers.length ? b.transfers.map((tr, i) => `<tr>
+    <td>${esc(tr.invoiceNo)}</td>
+    <td>${esc(tr.date)}</td>
+    <td>${esc(TRANSFER_TYPES[tr.transferType] || (tr.direction === 'in' ? 'وارد' : 'صادر'))}</td>
+    <td>${esc(tr.party || tr.fromTo)}</td>
+    <td class="n">${fmt(tr.amount)}</td>
+    <td>${esc(tr.currency)}</td>
+    <td>${esc(tr.status)}</td>
+    <td>${esc(tr.purpose || '—')}</td>
+    <td>${esc(tr.note || '—')}</td>
+    <td>${tr.doc ? `<a href="${esc(resolveDoc(tr.doc))}" target="_blank" rel="noopener">عرض المستند</a>` : '<span class="undef">مفقود</span>'}</td>
+    ${state.admin ? `<td>${delBtn('banking.transfers', i)}</td>` : ''}
+  </tr>`).join('') : `<tr><td colspan="${state.admin ? 11 : 10}">لا توجد فواتير للحوالات</td></tr>`;
+
+  return `<h2>الحسابات البنكية</h2>
+  <p class="lead">إدارة البنوك، الحسابات، الرصيد حسب العملة، دفتر اليومية، والفواتير الخاصة بالحوالات الداخلة والخارجية.</p>
+  <section class="sec"><h3>الملخص والرسوم البيانية</h3><div class="analytics-grid">${totals}</div>${charts}</section>
+  <section class="sec"><h3>الحسابات البنكية حسب البنك</h3>${accountTables}${state.admin ? '<div class="addrow"><button class="btn sm" data-act="add-bank">إضافة بنك جديد</button></div>' : ''}</section>
+  <section class="sec"><h3>دفتر اليومية</h3><div class="scroll"><table class="tbl"><thead><tr><th>التاريخ</th><th>النوع</th><th>البنك</th><th>العملة</th><th>المبلغ</th><th>الوصف</th><th>الاتجاه</th>${state.admin ? '<th></th>' : ''}</tr></thead><tbody>${journalRows}</tbody></table></div>${state.admin ? '<div class="addrow"><button class="btn sm" data-act="add-bank-journal">إضافة قيد</button></div>' : ''}</section>
+  <section class="sec"><h3>الوارد والصادر: التحويلات الداخلية والخارجية</h3><div class="scroll"><table class="tbl"><thead><tr><th>رقم الفاتورة</th><th>التاريخ</th><th>نوع الحركة</th><th>الجهة</th><th>المبلغ</th><th>العملة</th><th>الحالة</th><th>الغرض</th><th>ملاحظات</th><th>مستند PDF/صورة</th>${state.admin ? '<th></th>' : ''}</tr></thead><tbody>${transferRows}</tbody></table></div>${state.admin ? '<div class="addrow"><button class="btn sm" data-act="add-bank-transfer">إضافة حركة موثقة</button></div>' : ''}</section>
+  <div class="addrow"><button class="btn" data-act="export-banking">فتح ملف الحسابات في Excel</button></div>`;
+};
+
+PAGES.docs = () => {
+  const documents = state.data.documents || [], letters = state.data.governmentLetters || [];
+  const documentRows = documents.map((document, index) => `<tr><td>${esc(document.title)}</td><td>${document.doc ? `<button class="btn sm" data-act="doc" data-ref="documents.${index}">فتح المستند</button>` : '<span class="undef">لم تتم الإضافة بعد</span>'}</td>${state.admin ? `<td><input class="in" type="file" accept="image/*,.pdf" data-document-file="${index}" aria-label="رفع المستند"></td>` : ''}</tr>`).join('');
+  const letterRows = letters.length ? letters.map((letter, index) => `<tr><td>${state.admin ? F(`governmentLetters.${index}.title`, { label: 'عنوان الخطاب' }) : esc(letter.title)}</td><td>${state.admin ? F(`governmentLetters.${index}.description`, { type: 'area', label: 'وصف الخطاب' }) : esc(letter.description || '—')}</td><td>${letter.doc ? `<button class="btn sm" data-act="doc" data-ref="governmentLetters.${index}">فتح الخطاب</button>` : '<span class="undef">لم تتم إضافة الخطاب</span>'}</td>${state.admin ? `<td><input class="in" type="file" accept="image/*,.pdf" data-letter-file="${index}" aria-label="رفع الخطاب"></td><td>${saveBtn()}${delBtn('governmentLetters', index)}</td>` : ''}</tr>`).join('') : `<tr><td colspan="${state.admin ? 5 : 3}">لا توجد خطابات مضافة بعد</td></tr>`;
+  return `<h2>المستندات والخطابات</h2><p class="lead">يمكن للشريك فتح المستندات المتاحة مباشرة. في وضع الإدارة يمكنك رفع ملفات PDF أو الصور من الجهاز، وإضافة خطابات موجهة للجهات الحكومية بعنوان ووصف.</p>
+  <section class="sec"><h3>المستندات الأساسية</h3><div class="scroll"><table class="tbl"><thead><tr><th>المستند</th><th>الحالة</th>${state.admin ? '<th>رفع الملف</th>' : ''}</tr></thead><tbody>${documentRows}</tbody></table></div></section>
+  <section class="sec"><h3>الخطابات الموجهة للجهات الحكومية</h3><div class="scroll"><table class="tbl"><thead><tr><th>عنوان الخطاب</th><th>الوصف</th><th>الملف</th>${state.admin ? '<th>رفع الخطاب</th><th></th>' : ''}</tr></thead><tbody>${letterRows}</tbody></table></div>${state.admin ? '<div class="addrow"><button class="btn sm" data-act="add-government-letter">إضافة خطاب حكومي</button></div>' : ''}</section>`;
+};
+
+PAGES.users = () => {
+  if (!state.admin) return '<h2>غير متاح</h2><p class="lead">هذه الصفحة خاصة بوضع الإدارة.</p>';
+  const users = state.data.users || [];
+  const rows = users.length ? users.map((user, index) => `<tr>
+    <td>${F(`users.${index}.name`, { label: 'الاسم' })}</td>
+    <td>${F(`users.${index}.email`, { label: 'البريد الإلكتروني' })}</td>
+    <td>${F(`users.${index}.phone`, { label: 'الهاتف' })}</td>
+    <td>${F(`users.${index}.status`, { type: 'select', opts: { allowed: 'مسموح', blocked: 'ممنوع' }, label: 'الحالة' })}</td>
+    <td>قراءة فقط</td>
+    <td>${esc(user.lastLogin || 'لم يدخل بعد')}</td>
+    <td>${nf.format(Number(user.loginCount || 0))}</td>
+    <td><input class="in" type="password" data-user-password="${index}" placeholder="كلمة مرور جديدة" aria-label="كلمة مرور جديدة"><button class="btn sm" data-act="reset-user-password" data-i="${index}">تغيير</button></td>
+    <td>${saveBtn()}${delBtn('users', index)}</td>
+  </tr>`).join('') : '<tr><td colspan="9">لا يوجد مستخدمون مضافون</td></tr>';
+  return `<h2>مستخدمو القراءة فقط</h2><p class="lead">أضف الأشخاص الذين تسمح لهم بقراءة الموقع. لا تظهر هذه الصفحة إلا لك في وضع الإدارة، وكلمات المرور لا تُعرض بل تُحفظ كـ hash.</p>
+  <section class="sec"><h3>إضافة مستخدم</h3><div class="form"><label>الاسم<input id="newUserName" class="in" placeholder="اسم المستخدم"></label><label>البريد الإلكتروني<input id="newUserEmail" class="in" type="email" dir="ltr" placeholder="name@example.com"></label><label>رقم الهاتف<input id="newUserPhone" class="in" dir="ltr" placeholder="رقم الهاتف"></label><label>كلمة المرور المؤقتة<input id="newUserPassword" class="in" type="password" dir="ltr" placeholder="كلمة المرور"></label><div><button class="btn gold" data-act="add-user">إضافة مستخدم قراءة فقط</button></div></div></section>
+  <section class="sec"><h3>المستخدمون المسموح لهم</h3><div class="scroll"><table class="tbl"><thead><tr><th>الاسم</th><th>البريد</th><th>الهاتف</th><th>الحالة</th><th>الصلاحية</th><th>آخر دخول</th><th>عدد الدخول</th><th>تغيير كلمة المرور</th><th></th></tr></thead><tbody>${rows}</tbody></table></div></section>`;
+};
+
+PAGES.employees = () => {
+  const employees = state.data.employees || [], tasks = state.data.tasks || [];
+  const attendanceSummary = employee => {
+    const log = employee.attendanceLog || [];
+    return { present: log.filter(item => item.status === 'present').length, excused: log.filter(item => item.status === 'excused').length, absent: log.filter(item => item.status === 'absent').length };
+  };
+  const groups = DEPARTMENTS.map(department => [department, employees.filter(employee => employee.department === department)]);
+  const publicRows = groups.map(([department, rows]) => { const manager = rows.find(employee => employee.isManager); return `<section class="bank-group"><div class="bank-group-head"><h4>${department}</h4><span>${manager ? `المدير: ${esc(manager.name)} | ` : ''}${rows.length} موظف</span></div><div class="employee-grid">${rows.length ? rows.map(employee => {
+    const employeeTasks = tasks.filter(task => task.assignee === employee.name);
+    const completed = employeeTasks.filter(task => task.status === 'مكتملة').length;
+    const photo = employee.photo && resolveImage(employee.photo), attendance = attendanceSummary(employee);
+    return `<article class="employee-card">${photo ? `<img class="employee-photo" src="${esc(photo)}" alt="${esc(employee.name)}">` : '<div class="employee-photo placeholder">موظف</div>'}<h3>${esc(employee.name)}${employee.isManager ? ' <span class="chip done">مدير</span>' : ''}</h3><p>${esc(employee.role)}</p><dl><div><dt>الراتب</dt><dd>${nf.format(Number(employee.salary || 0))} ${esc(employee.currency || 'USD')}</dd></div><div><dt>التعيين</dt><dd>${esc(employee.hireDate || '—')}</dd></div><div><dt>الحضور</dt><dd>${attendance.present}</dd></div><div><dt>الغياب</dt><dd>بعذر ${attendance.excused} | بدون عذر ${attendance.absent}</dd></div><div><dt>المهام</dt><dd>${employeeTasks.length}، المنجز ${completed}</dd></div></dl></article>`;
+  }).join('') : '<p class="notice">لا يوجد موظفون مسجلون</p>'}</div></section>`; }).join('');
+  const adminRows = employees.map((employee, index) => `<tr>
+    <td>${F(`employees.${index}.name`, { label: 'اسم الموظف' })}</td><td>${F(`employees.${index}.department`, { type: 'select', opts: Object.fromEntries(DEPARTMENTS.map(item => [item, item])), label: 'الإدارة' })}</td><td>${F(`employees.${index}.isManager`, { type: 'bool', label: 'مدير الإدارة' })}</td><td>${F(`employees.${index}.role`, { label: 'المسمى الوظيفي' })}</td><td>${F(`employees.${index}.phone`, { label: 'الهاتف' })}</td><td>${F(`employees.${index}.status`, { type: 'select', opts: EMPLOYEE_STATUS, label: 'الحالة' })}</td><td>${F(`employees.${index}.salary`, { type: 'num', label: 'الراتب' })}</td><td>${F(`employees.${index}.currency`, { label: 'عملة الراتب' })}</td><td>${F(`employees.${index}.hireDate`, { type: 'date', label: 'تاريخ التعيين' })}</td><td>${F(`employees.${index}.deductions`, { type: 'num', label: 'الخصميات' })}</td><td>${F(`employees.${index}.bonuses`, { type: 'num', label: 'المكافآت' })}</td><td>${F(`employees.${index}.commissions`, { type: 'num', label: 'العمولات' })}</td><td>${F(`employees.${index}.warnings`, { type: 'area', label: 'الإنذارات' })}</td><td>${F(`employees.${index}.contracts`, { type: 'area', label: 'العقود' })}</td><td>${F(`employees.${index}.achievements`, { type: 'area', label: 'الإنجازات' })}</td><td>${F(`employees.${index}.passportNumber`, { label: 'رقم الجواز' })}</td><td><input class="in" type="file" accept="image/*,.pdf" data-employee-passport="${index}" aria-label="رفع صورة أو ملف الجواز"></td><td><input class="in" type="file" accept="image/*" data-employee-photo="${index}" aria-label="رفع صورة الموظف"></td><td>${F(`employees.${index}.notes`, { type: 'area', label: 'ملاحظات' })}</td><td>${saveBtn()}${delBtn('employees', index)}</td>
+  </tr>`).join('');
+  const attendanceAdmin = state.admin ? `<section class="sec"><h3>الحضور والغياب اليومي</h3><p class="lead">اختر الموظف ثم سجّل حالته اليومية: حاضر، غائب بعذر، أو غائب بدون عذر.</p><div class="form"><label>التاريخ<input id="attendanceDate" class="in" type="date" value="${new Date().toISOString().slice(0, 10)}"></label></div><div class="scroll"><table class="tbl"><thead><tr><th>الموظف</th><th>الإدارة</th><th>الحالة</th><th>ملاحظة</th><th></th></tr></thead><tbody>${employees.map((employee, index) => `<tr><td>${esc(employee.name)}</td><td>${esc(employee.department)}</td><td><select class="in sel" data-attendance-status="${index}">${Object.entries(ATTENDANCE_STATUS).map(([key, label]) => `<option value="${key}">${label}</option>`).join('')}</select></td><td><input class="in" data-attendance-note="${index}" placeholder="ملاحظة اختيارية"></td><td><button class="btn sm" data-act="mark-attendance" data-i="${index}">تسجيل اليوم</button></td></tr>`).join('')}</tbody></table></div></section>` : '';
+  return `<h2>الموظفون والإدارات</h2><p class="lead">الواجهة العامة تعرض المعلومات التشغيلية للموظفين. في وضع الإدارة تظهر ملفات HRM الكاملة، بما فيها الهوية والحضور والغياب والإنذارات والمكافآت والعمولات.</p>${state.admin ? `<div class="scroll"><table class="tbl"><thead><tr><th>الموظف</th><th>الإدارة</th><th>مدير</th><th>المسمى</th><th>الهاتف</th><th>الحالة</th><th>الراتب</th><th>العملة</th><th>التعيين</th><th>الخصميات</th><th>المكافآت</th><th>العمولات</th><th>الإنذارات</th><th>العقود</th><th>الإنجازات</th><th>رقم الجواز</th><th>صورة الجواز</th><th>صورة الموظف</th><th>ملاحظات</th><th></th></tr></thead><tbody>${adminRows}</tbody></table></div><div class="addrow"><button class="btn sm" data-act="add-employee">إضافة موظف</button></div>${attendanceAdmin}` : publicRows}`;
+};
+
+PAGES.tasks = () => {
+  const tasks = state.data.tasks || [];
+  const rows = tasks.map((task, index) => `<tr>
+    <td>${state.admin ? F(`tasks.${index}.title`, { label: 'المهمة' }) : esc(task.title)}</td>
+    <td>${state.admin ? F(`tasks.${index}.department`, { type: 'select', opts: Object.fromEntries(DEPARTMENTS.map(item => [item, item])), label: 'الإدارة' }) : esc(task.department)}</td>
+    <td>${state.admin ? F(`tasks.${index}.assignee`, { label: 'المسؤول' }) : esc(task.assignee)}</td>
+    <td>${state.admin ? F(`tasks.${index}.status`, { type: 'select', opts: TASK_STATUS, label: 'الحالة' }) : esc(task.status)}</td>
+    <td>${state.admin ? F(`tasks.${index}.priority`, { label: 'الأولوية' }) : esc(task.priority)}</td>
+    <td>${state.admin ? F(`tasks.${index}.due`, { type: 'date', label: 'تاريخ الاستحقاق' }) : esc(task.due || '—')}</td>
+    <td>${state.admin ? F(`tasks.${index}.notes`, { type: 'area', label: 'ملاحظات' }) : esc(task.notes || '—')}</td>
+    ${state.admin ? `<td>${saveBtn()}${delBtn('tasks', index)}</td>` : ''}
+  </tr>`).join('');
+  return `<h2>المهام الموكلة لكل قسم</h2><p class="lead">توزيع المهام على الإدارات والموظفين مع حالة الإنجاز والأولوية وتاريخ الاستحقاق.</p><div class="scroll"><table class="tbl"><thead><tr><th>المهمة</th><th>الإدارة</th><th>المسؤول</th><th>الحالة</th><th>الأولوية</th><th>الاستحقاق</th><th>ملاحظات</th>${state.admin ? '<th></th>' : ''}</tr></thead><tbody>${rows || `<tr><td colspan="${state.admin ? 8 : 7}">لا توجد مهام</td></tr>`}</tbody></table></div>${state.admin ? '<div class="addrow"><button class="btn sm" data-act="add-task">إضافة مهمة</button></div>' : ''}`;
+};
+
+PAGES.open = () => {
+  const d = state.data, A = state.admin, T = compute(d);
+  return `<h2>النقاط غير المحسومة</h2>
+  <p class="lead">أرقام وقرارات ما زالت بانتظار الاعتماد. لا يُفترض لها أي سعر أو نسبة في الحسابات.</p>
+  <ol class="steps">${d.open.map((o, i) => `<li class="${o.done ? 'done' : ''}"><div>${A ? F(`open.${i}.text`, { type: 'area', label: 'البند' }) : esc(o.text)}</div><div class="act">${A ? `<label>${F(`open.${i}.done`, { type: 'bool', label: 'محسوم' })} محسوم</label>${saveBtn()}${delBtn('open', i)}` : chip(o.done ? 'done' : 'next', o.done ? 'محسوم' : 'مفتوح')}</div></li>`).join('')}</ol>
+  ${A ? '<div class="addrow"><button class="btn sm" data-act="add-open">إضافة نقطة</button></div>' : ''}
+  ${T.missing.length ? `<section class="sec"><h3>بنود بلا رقم في الحسابات</h3><div class="notice"><ul>${T.missing.map(m => `<li>${esc(m)}</li>`).join('')}</ul></div></section>` : ''}`;
+};
+
+/* ============ العرض والتحديث بدون فقدان التركيز ============ */
+function patch(a, b) {
+  if (a.nodeType !== b.nodeType || a.nodeName !== b.nodeName) return false;
+  if (a.nodeType === 3 || a.nodeType === 8) { if (a.nodeValue !== b.nodeValue) a.nodeValue = b.nodeValue; return true; }
+  for (const at of [...a.attributes]) if (!b.hasAttribute(at.name)) a.removeAttribute(at.name);
+  for (const at of [...b.attributes]) if (a.getAttribute(at.name) !== at.value) a.setAttribute(at.name, at.value);
+  const act = document.activeElement === a;
+  if (a.nodeName === 'INPUT') {
+    if (a.type === 'checkbox') a.checked = b.hasAttribute('checked');
+    else if (!act) a.value = b.getAttribute('value') ?? '';
+    return true;
+  }
+  if (a.nodeName === 'TEXTAREA') { if (!act) a.value = b.textContent; return true; }
+  syncChildren(a, b);
+  if (a.nodeName === 'SELECT' && !act) { const s = [...b.options].find(o => o.hasAttribute('selected')); if (s) a.value = s.value; }
+  return true;
+}
+function syncChildren(a, b) {
+  const ac = [...a.childNodes], bc = [...b.childNodes];
+  for (let i = 0; i < bc.length; i++) {
+    if (!ac[i]) a.appendChild(bc[i].cloneNode(true));
+    else if (!patch(ac[i], bc[i])) a.replaceChild(bc[i].cloneNode(true), ac[i]);
+  }
+  while (a.childNodes.length > bc.length) a.lastChild.remove();
+}
+let lastNav = '', lastBar = '';
+function render() {
+  const d = state.data; if (!d) return;
+  if (!state.admin && state.page === 'visitors') state.page = 'home';
+  document.title = `لوحة الشركاء | ${d.company.name}`;
+  $('#companyName').textContent = d.company.name;
+  const openN = d.open.filter(o => !o.done).length;
+  const nav = [['home', 'الرئيسية'], ['employees', 'الموظفون والإدارات'], ['tasks', 'المهام'], ...(state.admin ? [['users', 'مستخدمو القراءة فقط'], ['visitors', 'تقارير الزوار']] : []), ['banking', 'الحسابات البنكية'], ['finance', 'المالية'], ['stages', 'المراحل'], ['equipment', 'المعدات'], ['licensing', 'التراخيص والرسوم'], ['docs', 'المستندات'], ['open', 'غير المحسوم']]
+    .map(([k, l]) => `<a href="#/${k}"${state.page === k ? ' aria-current="page"' : ''}>${l}${k === 'open' && openN ? `<span class="badge">${openN}</span>` : ''}</a>`).join('');
+  if (nav !== lastNav) { $('#nav').innerHTML = nav; lastNav = nav; }
+  const adminName = getAdminName();
+  const storageMessage = state.source === 'sqlite'
+    ? 'البيانات محفوظة في SQLite على الخادم.'
+    : state.canStore
+      ? 'التعديلات محفوظة على هذا المتصفح فقط؛ شغّل app.py للحفظ في SQLite.'
+      : 'المتصفح لا يسمح بالحفظ المحلي هنا؛ شغّل app.py للحفظ في SQLite قبل إغلاق الصفحة.';
+  const bar = state.admin ? `<div class="wrap"><p><b>خانة وضع الإدارة:</b> مفعّل. ${adminName ? `مرحباً ${esc(adminName)}،` : 'مرحباً،'} أي تعديل ينعكس فوراً على كل الإجماليات والمؤشرات. ${storageMessage}</p>
+    <div class="admin-actions"><button class="btn" data-act="save">حفظ التعديلات</button><button class="btn" data-act="export">تصدير البيانات (data.json)</button><button class="btn" data-act="import">استيراد بيانات</button><button class="btn" data-act="reset">استعادة الافتراضي</button></div></div>` : '';
+  if (bar !== lastBar) { const el = $('#adminbar'); el.hidden = !state.admin; el.innerHTML = bar; lastBar = bar; }
+  const ab = $('#adminBtn'); ab.setAttribute('aria-pressed', state.admin); ab.textContent = state.admin ? 'إنهاء وضع الإدارة' : 'وضع الإدارة';
+  const html = PAGES[state.page]();
+  const app = $('#app');
+  if (app.dataset.page !== state.page) { app.innerHTML = html; app.dataset.page = state.page; }
+  else { const h = document.createElement('div'); h.innerHTML = html; syncChildren(app, h); }
+  state.first = false;
+}
+function route() {
+  const h = location.hash.replace(/^#\/?/, '') || 'home';
+  const prev = state.page;
+  state.page = PAGES[h] && (!['visitors', 'users'].includes(h) || state.admin) ? h : 'home';
+  if (!state.admin && state.page !== 'visitors' && (state.page !== prev || !state.first)) recordPageVisit(state.page);
+}
+window.addEventListener('hashchange', () => { route(); render(); window.scrollTo(0, 0); });
+
+/* ============ المستندات ============ */
+function resolveDoc(src) {
+  src = String(src || '').trim();
+  if (!src || /^(javascript|vbscript|blob):/i.test(src)) return null;
+  if (/^data:/i.test(src) && !/^data:(application\/pdf|image\/(png|jpe?g|webp|gif));base64,/i.test(src)) return null;
+  const m = src.match(/^storage:\/\/(.+)$/i);
+  if (m) { const b = (state.data.settings.storageBase || '').trim(); return b ? b.replace(/\/+$/, '') + '/' + m[1] : null; }
+  return src;
+}
+function resolveImage(src) {
+  src = String(src || '').trim();
+  return /^data:image\/(png|jpe?g|webp|gif);base64,/i.test(src) || /^https?:\/\//i.test(src) ? src : null;
+}
+function compressImage(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('تعذر قراءة الصورة'));
+    reader.onload = () => {
+      const image = new Image();
+      image.onerror = () => reject(new Error('ملف الصورة غير صالح'));
+      image.onload = () => {
+        const maxSide = 1280;
+        const scale = Math.min(1, maxSide / Math.max(image.naturalWidth, image.naturalHeight));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+        canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+        const context = canvas.getContext('2d', { alpha: false });
+        context.fillStyle = '#fff';
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+        const webp = canvas.toDataURL('image/webp', 0.72);
+        resolve(webp.startsWith('data:image/webp') ? webp : canvas.toDataURL('image/jpeg', 0.72));
+      };
+      image.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+function openDoc(ref) {
+  const ent = getPath(state.data, ref) || {};
+  const src = ent.doc, url = resolveDoc(src);
+  const label = ent.title || ent.name || 'خطاب وزارة المعادن (الملاءة المالية)';
+  $('#docTitle').textContent = label;
+  const body = $('#docBody'), nw = $('#docNew');
+  if (!url) { body.innerHTML = '<p>تعذر فتح المستند. تحقق من مصدر المستند، وإن كان يبدأ بـ storage:// فحدد مسار التخزين من وضع الإدارة.</p>'; nw.hidden = true; }
+  else {
+    nw.hidden = false; nw.href = url;
+    const clean = url.split('#')[0].split('?')[0].toLowerCase();
+    if (/\.(jpe?g|png|webp|gif|avif)$/.test(clean)) body.innerHTML = `<img src="${esc(url)}" alt="${esc(label)}">`;
+    else if (/\.pdf$/.test(clean)) body.innerHTML = `<iframe src="${esc(url)}" title="${esc(label)}"></iframe>`;
+    else body.innerHTML = `<p>سيُفتح هذا المستند في نافذة جديدة.</p><p><a class="btn" href="${esc(url)}" target="_blank" rel="noopener">فتح المستند</a></p>`;
+  }
+  $('#docDlg').showModal();
+}
+
+/* ============ الأحداث ============ */
+let tt; function toast(m) { const t = $('#toast'); t.textContent = m; t.classList.add('on'); clearTimeout(tt); tt = setTimeout(() => t.classList.remove('on'), 6500); }
+
+document.addEventListener('change', async e => {
+  const fileInput = e.target.closest('[data-employee-photo], [data-employee-passport], [data-document-file], [data-letter-file]');
+  if (fileInput) {
+    const file = fileInput.files && fileInput.files[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { toast('حجم الملف يجب ألا يتجاوز 5 ميجابايت.'); fileInput.value = ''; return; }
+    const saveFile = async source => {
+      if (fileInput.dataset.employeePhoto !== undefined || fileInput.dataset.employeePassport !== undefined) {
+        const index = Number(fileInput.dataset.employeePhoto ?? fileInput.dataset.employeePassport);
+        const employee = state.data.employees[index];
+        if (!employee) return;
+        if (fileInput.dataset.employeePhoto !== undefined && !file.type.startsWith('image/')) { toast('صورة الموظف يجب أن تكون صورة.'); return; }
+        employee[fileInput.dataset.employeePhoto !== undefined ? 'photo' : 'passportDoc'] = source;
+      } else if (fileInput.dataset.documentFile !== undefined) {
+        state.data.documents[Number(fileInput.dataset.documentFile)].doc = source;
+      } else {
+        state.data.governmentLetters[Number(fileInput.dataset.letterFile)].doc = source;
+      }
+      await commitData('تم رفع الملف.');
+    };
+    if (file.type.startsWith('image/')) {
+      try { await saveFile(await compressImage(file)); toast('تم تصغير الصورة وضغطها قبل الحفظ.'); }
+      catch (error) { toast(error.message || 'تعذر ضغط الصورة.'); }
+    } else {
+      const reader = new FileReader();
+      reader.onload = () => saveFile(reader.result);
+      reader.onerror = () => toast('تعذر قراءة الملف.');
+      reader.readAsDataURL(file);
+    }
+    return;
+  }
+  const el = e.target.closest('[data-path]'); if (!el) return;
+  const p = el.dataset.path, t = el.dataset.type; let v;
+  if (t === 'num') { v = el.value === '' ? null : Number(el.value); if (v !== null && !isFinite(v)) return; }
+  else if (t === 'bool') v = el.checked;
+  else if (t === 'doc') {
+    v = el.value.trim();
+    if (/^(data|javascript|vbscript|blob):/i.test(v)) { toast('لا يُسمح بتضمين الملفات داخل الصفحة. استخدم رابطًا أو مسارًا.'); el.value = getPath(state.data, p) || ''; return; }
+  } else v = el.value;
+  if (p === 'settings.whatsapp' && v && !/^https:\/\//i.test(v)) { toast('رابط واتساب يجب أن يبدأ بـ https://'); el.value = getPath(state.data, p) || ''; return; }
+  if ((p === 'settings.fx' || p === 'settings.seedUSD') && (v === null || v <= 0)) { toast('القيمة يجب أن تكون أكبر من صفر.'); render(); return; }
+  if (p.startsWith('settings.') && v === null && !['storageBase','whatsapp'].includes(p.slice(9))) v = 0;
+  setPath(state.data, p, v);
+});
+
+document.addEventListener('click', async e => {
+  const b = e.target.closest('[data-act]'); if (!b) return;
+  const a = b.dataset.act, d = state.data;
+  if (a === 'admin') {
+    if (state.admin) { state.admin = false; render(); return; }
+    showAdminPasswordDialog();
+  }
+  else if (a === 'toggle-admin-pwd') {
+    const input = $('#adminPwdInput');
+    const btn = b;
+    const showing = input.type === 'text';
+    input.type = showing ? 'password' : 'text';
+    btn.setAttribute('aria-label', showing ? 'إظهار كلمة المرور' : 'إخفاء كلمة المرور');
+    btn.setAttribute('title', showing ? 'إظهار كلمة المرور' : 'إخفاء كلمة المرور');
+    btn.innerHTML = showing ? '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="2.6" stroke="currentColor" stroke-width="1.8"/></svg>' : '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m3 3 18 18M10.6 6.2A10.5 10.5 0 0 1 12 6c6 0 9.5 6 9.5 6a16.7 16.7 0 0 1-3 3.7M6.2 6.9C3.7 8.4 2.5 12 2.5 12s3.5 6 9.5 6c1.1 0 2.1-.2 3-.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  }
+  else if (a === 'confirm-admin') {
+    if (!(await validateAdminPassword())) return;
+    closeAdminPasswordDialog();
+    state.admin = true;
+    if (!getAdminName()) {
+      showAdminNameDialog();
+    }
+    render();
+  }
+  else if (a === 'close-admin-pwd') {
+    closeAdminPasswordDialog();
+  }
+  else if (a === 'confirm-admin-name') {
+    if (!validateAdminName()) return;
+    closeAdminNameDialog();
+    render();
+  }
+  else if (a === 'close-admin-name') {
+    closeAdminNameDialog();
+  }
+  else if (a === 'mark-attendance') {
+    const index = Number(b.dataset.i), employee = d.employees[index];
+    const date = $('#attendanceDate')?.value || new Date().toISOString().slice(0, 10);
+    const status = $(`[data-attendance-status="${index}"]`)?.value || 'present';
+    const note = $(`[data-attendance-note="${index}"]`)?.value.trim() || '';
+    if (!employee) return;
+    employee.attendanceLog ||= [];
+    employee.attendanceLog = employee.attendanceLog.filter(item => item.date !== date);
+    employee.attendanceLog.push({ date, status, note });
+    employee.attendance = `${employee.attendanceLog.filter(item => item.status === 'present').length} يوم حضور`;
+    employee.absence = `${employee.attendanceLog.filter(item => item.status !== 'present').length} يوم غياب`;
+    await commitData(`تم تسجيل ${ATTENDANCE_STATUS[status]} للموظف.`);
+  }
+  else if (a === 'pdf') printReport();
+  else if (a === 'ask') askOwner();
+  else if (a === 'doc') openDoc(b.dataset.ref);
+  else if (a === 'close-doc') $('#docDlg').close();
+  else if (a === 'save') { if (confirm('هل أنت متأكد من حفظ التعديلات؟')) await commitData('تم حفظ التعديلات.'); }
+  else if (a === 'del') { if (confirm('هل أنت متأكد من الحذف؟')) { const list = b.dataset.list; const idx = +b.dataset.i; if (list.includes('.')) { const keys = list.split('.'); let target = d; for (const key of keys.slice(0, -1)) { if (!target || !target[key]) return; target = target[key]; } if (Array.isArray(target)) target.splice(idx, 1); } else { d[list].splice(idx, 1); } await commitData('تم حذف البند.'); } }
+  else if (a === 'add-ledger') { if (!confirm('هل أنت متأكد من إضافة هذا البند؟')) return; d.ledger.push({ group: b.dataset.group, title: 'بند جديد', usd: null, note: '', doc: '', ...NEWROW[b.dataset.group] }); await commitData('تمت إضافة البند.'); }
+  else if (a === 'add-bank') {
+    const bankName = promptValue('اسم البنك:', 'بنك جديد');
+    if (!bankName) return;
+    const accountNo = promptValue('رقم الحساب:', '');
+    const currency = promptValue('العملة:', 'USD');
+    const balance = promptAmount('الرصيد:');
+    if (accountNo === null || !currency || balance === null) return;
+    if (!confirm('هل أنت متأكد من إضافة هذا الحساب البنكي؟')) return;
+    const bank = d.banking || {}; bank.accounts = bank.accounts || [];
+    bank.accounts.push({ bank: bankName, accountNo, currency, balance, purpose: promptValue('الغرض من الحساب:', 'الحساب الرئيسي للشركة') || '', iban: promptValue('IBAN (اختياري):', '') || '', notes: promptValue('ملاحظات (اختياري):', '') || '' });
+    d.banking = bank; await commitData('تمت إضافة الحساب البنكي.');
+  }
+  else if (a === 'add-bank-account') {
+    const bankName = b.dataset.bank || 'بنك جديد';
+    const accountNo = promptValue(`رقم الحساب الجديد في ${bankName}:`, '');
+    const currency = promptValue('العملة:', 'USD');
+    const balance = promptAmount('الرصيد:');
+    if (accountNo === null || !currency || balance === null) return;
+    if (!confirm('هل أنت متأكد من إضافة الحساب بالعملة الجديدة؟')) return;
+    const bank = d.banking || {}; bank.accounts = bank.accounts || [];
+    bank.accounts.push({ bank: bankName, accountNo, currency, balance, purpose: promptValue('الغرض من الحساب:', 'بيع وشراء الذهب') || '', iban: promptValue('IBAN (اختياري):', '') || '', notes: promptValue('ملاحظات (اختياري):', '') || '' });
+    d.banking = bank; await commitData('تمت إضافة الحساب بالعملة الجديدة.');
+  }
+  else if (a === 'add-bank-journal') {
+    const date = promptValue('تاريخ القيد:', new Date().toISOString().slice(0, 10));
+    const type = promptValue('نوع القيد:', 'إيداع');
+    const bankName = promptValue('البنك:', '');
+    const currency = promptValue('العملة:', 'USD');
+    const amount = promptAmount('المبلغ:');
+    const description = promptValue('الوصف:', '');
+    const direction = promptValue('الاتجاه: اكتب in للداخل أو out للخارج:', 'in');
+    if (!date || !type || !bankName || !currency || amount === null || !description || !['in', 'out'].includes(direction)) return;
+    if (!confirm('هل أنت متأكد من إضافة هذا القيد؟')) return;
+    const bank = d.banking || {}; bank.journal = bank.journal || [];
+    bank.journal.push({ date, type, bank: bankName, currency, amount, description, direction });
+    d.banking = bank; await commitData('تمت إضافة القيد اليومي.');
+  }
+  else if (a === 'add-bank-transfer') {
+    const invoiceNo = promptValue('رقم الفاتورة:', 'TR-' + Date.now().toString().slice(-6));
+    const date = promptValue('تاريخ الحوالة:', new Date().toISOString().slice(0, 10));
+    const transferType = promptValue('نوع الحركة: incoming_internal أو incoming_external أو outgoing_internal أو outgoing_external:', 'incoming_external');
+    const direction = transferType && transferType.startsWith('outgoing') ? 'out' : 'in';
+    const party = promptValue('اسم الجهة المحوِّلة أو المستلمة (شركة أو شخص):', '');
+    const amount = promptAmount('المبلغ:');
+    const currency = promptValue('العملة:', 'USD');
+    const status = promptValue('الحالة:', 'قيد التنفيذ');
+    const purpose = promptValue('الغرض من التحويل:', '');
+    const note = promptValue('ملاحظات:', '') || '';
+    const doc = promptValue('رابط مستند PDF أو صورة للحوالة (إجباري):', '');
+    if (!invoiceNo || !date || !TRANSFER_TYPES[transferType] || !party || amount === null || !currency || !status || !purpose || !isProofDocument(doc)) {
+      toast('لم تتم الإضافة: أكمل نوع الحركة والجهة والغرض ورابط PDF أو صورة صالح للحوالة.');
+      return;
+    }
+    if (!confirm('هل أنت متأكد من إضافة الحوالة مع مستندها؟')) return;
+    const bank = d.banking || {}; bank.transfers = bank.transfers || [];
+    bank.transfers.push({ invoiceNo, date, direction, transferType, fromTo: party, party, amount, currency, status, purpose, note, doc });
+    d.banking = bank; await commitData('تمت إضافة الحوالة الموثقة.');
+  }
+  else if (a === 'add-dev') { if (!confirm('هل أنت متأكد من إضافة جهاز؟')) return; d.devices.push({ name: 'جهاز جديد', model: '', price: null, priceKind: 'estimate', customsPct: null, permit: true, clearance: true, ceiling: true, note: '', doc: '' }); await commitData('تمت إضافة الجهاز.'); }
+  else if (a === 'add-ms') { if (!confirm('هل أنت متأكد من إضافة مرحلة؟')) return; d.milestones.push({ title: 'مرحلة جديدة', status: 'next', start: '', done: '', desc: '', doc: '' }); await commitData('تمت إضافة المرحلة.'); }
+  else if (a === 'add-step') { if (!confirm('هل أنت متأكد من إضافة خطوة؟')) return; d.steps.push({ title: 'خطوة جديدة', status: 'next', doc: '' }); await commitData('تمت إضافة الخطوة.'); }
+  else if (a === 'add-open') { if (!confirm('هل أنت متأكد من إضافة نقطة؟')) return; d.open.push({ text: 'نقطة جديدة', done: false }); await commitData('تمت إضافة النقطة.'); }
+  else if (a === 'add-employee') { if (!confirm('هل أنت متأكد من إضافة موظف؟')) return; d.employees.push({ name: 'موظف جديد', department: 'الإدارة', isManager: false, role: '', phone: '', status: 'active', salary: 0, currency: 'USD', hireDate: '', attendance: '', attendanceLog: [], absence: '', deductions: 0, bonuses: 0, commissions: 0, warnings: '', contracts: '', achievements: '', passportNumber: '', passportDoc: '', photo: '', notes: '' }); await commitData('تمت إضافة الموظف.'); }
+  else if (a === 'add-task') { if (!confirm('هل أنت متأكد من إضافة مهمة؟')) return; d.tasks.push({ title: 'مهمة جديدة', department: 'الإدارة', assignee: '', status: 'جديدة', due: '', priority: 'متوسطة', notes: '' }); await commitData('تمت إضافة المهمة.'); }
+  else if (a === 'add-government-letter') { const title = promptValue('عنوان الخطاب:', 'خطاب جديد'); if (!title) return; const description = promptValue('وصف الخطاب والجهة الموجه إليها:', '') || ''; d.governmentLetters.push({ title, description, doc: '' }); await commitData('تمت إضافة الخطاب.'); }
+  else if (a === 'add-user') {
+    const name = $('#newUserName')?.value.trim(), email = $('#newUserEmail')?.value.trim().toLowerCase(), phone = $('#newUserPhone')?.value.trim(), password = $('#newUserPassword')?.value || '';
+    if (!name || !email || !/^\S+@\S+\.\S+$/.test(email) || password.length < 8) { toast('أدخل الاسم والبريد الصحيح وكلمة مرور من 8 أحرف على الأقل.'); return; }
+    if (d.users.some(user => user.email === email)) { toast('هذا البريد مضاف مسبقًا.'); return; }
+    if (!confirm('هل أنت متأكد من إضافة هذا المستخدم بصلاحية قراءة فقط؟')) return;
+    d.users.push({ name, email, phone, passwordHash: await sha256Hex(password), status: 'allowed', readOnly: true, loginCount: 0, lastLogin: '', createdAt: new Date().toISOString() });
+    await commitData('تمت إضافة مستخدم القراءة فقط.');
+  }
+  else if (a === 'reset-user-password') {
+    const index = Number(b.dataset.i), input = $(`[data-user-password="${index}"]`), password = input?.value || '';
+    if (password.length < 8) { toast('كلمة المرور الجديدة يجب أن تكون 8 أحرف على الأقل.'); return; }
+    if (!confirm('هل أنت متأكد من تغيير كلمة مرور هذا المستخدم؟')) return;
+    d.users[index].passwordHash = await sha256Hex(password);
+    await commitData('تم تغيير كلمة المرور.');
+  }
+  else if (a === 'export-banking') exportBankingExcel();
+  else if (a === 'export') exportData();
+  else if (a === 'import') $('#importFile').click();
+  else if (a === 'reset') { if (confirm('استعادة البيانات الافتراضية؟ ستُحذف تعديلاتك المحفوظة على هذا المتصفح.')) { try { localStorage.removeItem(LS_KEY); } catch (e) {} state.data = structuredClone(DEFAULT); state.source = 'default'; render(); } }
+});
+$('#docDlg').addEventListener('click', e => { if (e.target.id === 'docDlg') e.target.close(); });
+$('#docDlg').addEventListener('close', () => { $('#docBody').innerHTML = ''; });
+
+function askOwner() {
+  const url = (state.data.settings.whatsapp || DEFAULT.settings.whatsapp || '').trim();
+  const msg = `أنا في قسم ${PAGE_LABEL[state.page] || ''} لدي استفسار منك يا باشمهندس`;
+  // رابط رسالة واتساب لا يقبل نصًا جاهزًا، فتُنسخ الرسالة ليلصقها الشريك ثم يكتب استفساره
+  try { navigator.clipboard.writeText(msg); } catch (e) {}
+  toast('تم نسخ: «' + msg + '». الصقها في واتساب ثم اكتب استفسارك.');
+  if (/^https:\/\//i.test(url)) window.open(url, '_blank', 'noopener');
+}
+function promptValue(label, initial = '') {
+  const value = window.prompt(label, initial);
+  return value === null ? null : value.trim();
+}
+function promptAmount(label) {
+  const value = promptValue(label, '0');
+  if (value === null) return null;
+  const amount = Number(value);
+  return Number.isFinite(amount) && amount >= 0 ? amount : null;
+}
+function isProofDocument(value) {
+  return /\.(pdf|jpe?g|png|webp|gif|avif)([?#].*)?$/i.test(value || '');
+}
+function exportBankingExcel() {
+  const banking = state.data.banking || { accounts: [], journal: [], transfers: [] };
+  const rows = [];
+  const csv = values => values.map(value => `"${String(value ?? '').replace(/"/g, '""')}"`).join(',');
+  rows.push(['الحسابات البنكية']);
+  rows.push(['البنك', 'رقم الحساب', 'العملة', 'الرصيد', 'الغرض', 'IBAN', 'ملاحظات']);
+  banking.accounts.forEach(account => rows.push([account.bank, account.accountNo, account.currency, account.balance, account.purpose, account.iban, account.notes]));
+  rows.push([]);
+  rows.push(['دفتر اليومية']);
+  rows.push(['التاريخ', 'النوع', 'البنك', 'العملة', 'المبلغ', 'الوصف', 'الاتجاه']);
+  banking.journal.forEach(entry => rows.push([entry.date, entry.type, entry.bank, entry.currency, entry.amount, entry.description, entry.direction === 'in' ? 'وارد' : 'صادر']));
+  rows.push([]);
+  rows.push(['الحوالات الداخلية والخارجية']);
+  rows.push(['رقم الفاتورة', 'التاريخ', 'نوع الحركة', 'الجهة', 'المبلغ', 'العملة', 'الحالة', 'الغرض', 'ملاحظات', 'مستند']);
+  banking.transfers.forEach(transfer => rows.push([
+    transfer.invoiceNo, transfer.date, TRANSFER_TYPES[transfer.transferType] || (transfer.direction === 'in' ? 'وارد' : 'صادر'),
+    transfer.party || transfer.fromTo, transfer.amount, transfer.currency, transfer.status, transfer.purpose, transfer.note, transfer.doc
+  ]));
+  const content = '\ufeff' + rows.map(csv).join('\r\n');
+  const blob = new Blob([content], { type: 'text/csv;charset=utf-8' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `الحسابات-البنكية-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(link.href), 2000);
+  toast('تم تجهيز ملف الحسابات لفتحه في Excel.');
+}
+function exportData() {
+  const blob = new Blob([JSON.stringify(state.data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'data.json';
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+$('#importFile').addEventListener('change', e => {
+  const f = e.target.files[0]; if (!f) return;
+  f.text().then(t => { const j = JSON.parse(t); if (!valid(j)) throw 0; state.data = j; saveLocal(); render(); toast('تم استيراد البيانات.'); })
+    .catch(() => toast('الملف غير صالح. استخدم ملفًا صدّرته من هذه اللوحة.'));
+  e.target.value = '';
+});
+
+/* ============ تقرير PDF (طباعة إلى PDF بنص عربي قابل للتحديد) ============ */
+function buildReport() {
+  const d = state.data, S = d.settings, T = compute(d);
+  const led = g => d.ledger.filter(x => x.group === g);
+  const tbl = g => `<table><thead><tr><th>البند</th><th>المبلغ</th><th>الحالة</th><th>ملاحظة</th></tr></thead><tbody>${led(g).map(x => `<tr><td>${esc(x.title)}</td><td>${usd(x.usd)}</td><td>${STATUS[x.status]}</td><td class="sm">${esc(x.note)}</td></tr>`).join('')}<tr class="tot"><td>الإجمالي</td><td colspan="3">${usd(led(g).reduce((a, x) => a + (x.usd || 0), 0))}</td></tr></tbody></table>`;
+  const date = new Date().toLocaleDateString('ar-EG-u-nu-latn', { year: 'numeric', month: 'long', day: 'numeric' });
+  const docs = registry().filter(r => getPath(d, r.ref + '.doc'));
+  return `<h1>${esc(d.company.name)}</h1>
+  <p class="sm">تقرير الشركاء — ${date} — ${esc(d.company.status)}</p>
+
+  <h2>الاستثمار والملخص المالي</h2>
+  <table><tbody>
+    <tr><td>الاستثمار المتفق عليه</td><td>${money(S.investmentSAR, 'ريال')} ≈ ${usd(T.ceiling)} (1 دولار = ${S.fx} ريال)</td></tr>
+    <tr><td>المستلم من الاستثمار</td><td>${money(S.receivedSAR, 'ريال')}</td></tr>
+    <tr><td>إجمالي التكلفة المحسوبة حتى الآن</td><td><b>${usd(T.all)}</b></td></tr>
+    <tr><td>المحتسب على سقف الاستثمار</td><td>${usd(T.ceilingCost)} — ${T.over ? `<b>تجاوز السقف بمقدار ${usd(T.ceilingCost - T.ceiling)}</b>` : `المتبقي ${usd(T.remaining)}`}</td></tr>
+    <tr><td>المصروف فعليًا (مدفوع)</td><td>${usd(T.paid)}</td></tr>
+    <tr><td>الديون على الشركة (مبلغ التأسيس، لا يُخصم من الاستثمار)</td><td>${usd(S.seedUSD)}</td></tr>
+    <tr><td>المساهمات الشخصية (ليست دينًا)</td><td>${usd(T.personal)}</td></tr>
+    <tr><td>محفوظ للمقر الدائم</td><td>${money(S.reservedSDG, 'جنيه سوداني')} ≈ ${usd(S.reservedUSD)}</td></tr>
+  </tbody></table>
+  ${T.missing.length ? `<p class="sm"><b>تنبيه: الإجمالي غير مكتمل.</b> بنود بلا رقم: ${T.missing.map(esc).join('؛ ')}.</p>` : ''}
+
+  <h2>مصروفات مبلغ التأسيس</h2>${tbl('setup')}
+  <h2>المساهمات الشخصية</h2>${tbl('personal')}
+
+  <h2>حالة الترخيص</h2>
+  <table><thead><tr><th>#</th><th>الخطوة</th><th>الحالة</th></tr></thead><tbody>${d.steps.map((s, i) => `<tr><td>${i + 1}</td><td>${esc(s.title)}</td><td>${MSTAT[s.status]}</td></tr>`).join('')}</tbody></table>
+
+  <h2>المعدات</h2>
+  <table><thead><tr><th>الجهاز</th><th>السعر</th><th>الجمارك</th><th>التصريح</th><th>التخليص</th><th>الإجمالي المعروف</th></tr></thead><tbody>
+  ${d.devices.map(v => { const c = deviceCalc(v, S); return `<tr><td>${esc(v.name)}${v.model ? ' <bdi dir="ltr">' + esc(v.model) + '</bdi>' : ''}</td><td>${usd(v.price)}</td><td>${v.customsPct == null ? 'نسبة غير محددة' : v.customsPct + '% = ' + (c.customs == null ? 'غير محسوب' : usd(c.customs))}</td><td>${usd(c.permit)}</td><td>${usd(c.clear)}</td><td>${usd(c.total)}</td></tr>`; }).join('')}</tbody></table>
+  <p class="sm">${esc(d.cancelled)}</p>
+
+  <h2>رسوم الترخيص والاستيراد</h2>${tbl('fees')}
+  <h2>تجهيز المقر</h2>${tbl('premises')}
+
+  <h2>المراحل</h2>
+  <table><thead><tr><th>المرحلة</th><th>الحالة</th><th>البداية</th><th>الإنجاز</th><th>التكلفة</th></tr></thead><tbody>
+  ${d.milestones.map(m => { const c = m.costRef ? T.stageCost(m.costRef) : m.cost; return `<tr><td>${esc(m.title)}</td><td>${MSTAT[m.status]}</td><td>${esc(m.start) || '—'}</td><td>${esc(m.done) || '—'}</td><td>${c ? usd(c) : '—'}</td></tr>`; }).join('')}</tbody></table>
+
+  <h2>المصروفات القادمة (المخططة والمقدَّرة)</h2>
+  <table><thead><tr><th>البند</th><th>المبلغ</th></tr></thead><tbody>${T.L.filter(l => l.status !== 'paid' && l.source === 'investment' && l.usd != null).map(l => `<tr><td>${esc(l.label)}</td><td>${usd(l.usd)}</td></tr>`).join('')}</tbody></table>
+
+  <h2>النقاط غير المحسومة</h2>
+  <ul>${d.open.filter(o => !o.done).map(o => `<li>${esc(o.text)}</li>`).join('')}</ul>
+
+  <h2>مراجع المستندات</h2>
+  ${docs.length ? `<table><thead><tr><th>البند</th><th>مصدر المستند</th></tr></thead><tbody>${docs.map(r => `<tr><td>${esc(r.l)}</td><td><bdi dir="ltr">${esc(getPath(d, r.ref + '.doc'))}</bdi></td></tr>`).join('')}</tbody></table>` : '<p class="sm">لا توجد مستندات مرتبطة بعد.</p>'}`;
+}
+function printReport() {
+  $('#report').innerHTML = buildReport();
+  const old = document.title; document.title = 'تقرير-الشركاء-ذهب-النيل';
+  const restore = () => { document.title = old; window.removeEventListener('afterprint', restore); };
+  window.addEventListener('afterprint', restore);
+  setTimeout(() => window.print(), 60);
+}
+
+init();
+})();
+</script>
+</body>
+</html>
