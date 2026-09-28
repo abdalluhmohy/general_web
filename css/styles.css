@@ -5451,16 +5451,12 @@ body.public-view .table-wrap .icon-act{
    MOBILE DASHBOARD HEADER — Fix overlap
    ============================================================ */
 @media(max-width:768px){
-
-  /* Stack header into 2 rows */
   .dash-top{
     flex-wrap: wrap;
     gap: 8px;
     padding: 12px 14px;
     align-items: center;
   }
-
-  /* Hide crumb subtitle + welcome on mobile */
   .dash-top .crumb{
     order: 1;
     flex: 1;
@@ -5469,30 +5465,19 @@ body.public-view .table-wrap .icon-act{
   }
   .dash-top .crumb small{
     font-size: 10.5px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
   }
   .dash-top .crumb h1{
     font-size: 16px;
-    line-height: 1.3;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
   }
   .dash-top .crumb #crumbWelcome{
     display: none !important;
   }
-
-  /* Mobile menu button - smaller */
   .dash-top .mobile-menu{
     order: 0;
     width: 38px;
     height: 38px;
     flex: none;
   }
-
-  /* Icon buttons - smaller */
   .dash-top .icon-btn:not(.mobile-menu){
     width: 36px;
     height: 36px;
@@ -5502,19 +5487,14 @@ body.public-view .table-wrap .icon-act{
     width: 16px;
     height: 16px;
   }
-
-  /* Language button smaller */
   .dash-top .lang-btn{
     width: 38px;
     height: 36px;
     font-size: 11px;
     flex: none;
   }
-
-  /* User chip - compact */
   .dash-top .user-chip{
     padding: 4px;
-    gap: 0;
   }
   .dash-top .user-chip .av{
     width: 32px;
@@ -5525,34 +5505,12 @@ body.public-view .table-wrap .icon-act{
   .dash-top .user-chip .role{
     display: none !important;
   }
-
-  /* Force controls row (icons) to wrap below crumb */
   .dash-top .spacer{
     display: none;
   }
-
-  /* Second row: buttons wrap right */
   .dash-top .icon-btn,
   .dash-top .lang-btn,
   .dash-top .user-chip{
     order: 5;
-  }
-
-  /* Tighten refresh / notif / lang */
-  .dash-top #refreshBtn,
-  .dash-top #notifBtn,
-  .dash-top #langBtnDash{
-    margin-inline-start: 0;
-  }
-
-  /* Remove the gear icon on mobile (mode toggle) — hidden anyway */
-  .dash-top #modeToggleBtn{
-    width: 36px;
-    height: 36px;
-  }
-
-  /* Bottom nav: hide labels if needed */
-  .bottom-nav a span{
-    font-size: 9.5px;
   }
 }
