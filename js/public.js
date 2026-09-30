@@ -1,4 +1,10 @@
-/* Gold Nile - Public Site v1.0.0 */
+/* Gold Nile - Public Site v1.0.0
+   يحتوي على:
+   - تحميل وحفظ بيانات الموقع العام
+   - عرض الخدمات، المزايا، مجلس الإدارة، الأخبار
+   - تعديل المحتوى المباشر (contenteditable) للمالك
+   - إدارة الروابط الاجتماعية وبيانات التواصل
+   ============================================================ */
 (function(){
   'use strict';
 
@@ -27,7 +33,7 @@
   };
 
   /* ============================================================
-     Save data back to dashboard_state (owner only)
+     Save data back to dashboard_state (owner + admin only)
      ============================================================ */
   GN.savePublicData = function(data){
     if (!GN.supa) return Promise.resolve(false);
@@ -127,14 +133,14 @@
     /* Dynamic sections */
     GN.renderServices(data.services || []);
     GN.renderAdvantages(data.advantages || []);
-    GN.renderBoard((data.public && data.public.board) || []);
+    GN.renderBoard(data.board || []);
     GN.renderNews(data.news || []);
-    GN.renderSocialLinks(data.settings && data.settings.social || {});
-    GN.renderContactInfo(data.settings && data.settings.contact || {});
+    GN.renderSocialLinks((data.settings && data.settings.social) || {});
+    GN.renderContactInfo((data.settings && data.settings.contact) || {});
   };
 
   /* ============================================================
-     Editable helpers
+     Editable helpers (contenteditable blur save)
      ============================================================ */
   GN.applyEditable = function(path, val){
     if (val == null) return;
@@ -167,8 +173,7 @@
     }
 
     grid.innerHTML = list.map(function(item, i){
-      var icon = item.icon || 'default';
-      var iconSvg = GN.iconSvg(icon);
+      var iconSvg = GN.iconSvg(item.icon || 'default');
       return '<article class="svc" data-svc-idx="' + i + '">' +
         GN.itemActions('services', i) +
         '<div class="ic">' + iconSvg + '</div>' +
@@ -191,8 +196,7 @@
     }
 
     grid.innerHTML = list.map(function(item, i){
-      var icon = item.icon || 'default';
-      var iconSvg = GN.iconSvg(icon);
+      var iconSvg = GN.iconSvg(item.icon || 'default');
       return '<div class="adv-card" data-adv-idx="' + i + '">' +
         GN.itemActions('advantages', i) +
         '<div class="ic">' + iconSvg + '</div>' +
@@ -206,278 +210,272 @@
      Board Members
      ============================================================ */
   GN.renderBoard = function(list){
-  if (!Array.isArray(list)) list = [];
-  var grid = document.getElementById('boardGrid');
-  if (!grid) return;
-  grid.className = 'board-grid-v2';
+    if (!Array.isArray(list)) list = [];
+    var grid = document.getElementById('boardGrid');
+    if (!grid) return;
+    grid.className = 'board-grid-v2';
 
-  /* Add toolbar (owner only) */
-  var toolbar = document.getElementById('boardToolbar');
-  if (GN.session.isOwner && !toolbar){
-    toolbar = document.createElement('div');
-    toolbar.id = 'boardToolbar';
-    toolbar.className = 'board-toolbar';
-    toolbar.innerHTML = '<button class="btn btn-pri btn-sm" data-act="board-manage">' +
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:14px;height:14px"><path d="M12 5v14M5 12h14"/></svg> ' +
-      GN.esc(GN.t('boardManage')) + '</button>';
-    grid.parentNode.insertBefore(toolbar, grid);
-  }
+    /* Add toolbar (owner only) */
+    var toolbar = document.getElementById('boardToolbar');
+    if (GN.session.isOwner && !toolbar){
+      toolbar = document.createElement('div');
+      toolbar.id = 'boardToolbar';
+      toolbar.className = 'board-toolbar';
+      toolbar.innerHTML = '<button class="btn btn-pri btn-sm" data-act="board-manage">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:14px;height:14px"><path d="M12 5v14M5 12h14"/></svg> ' +
+        GN.esc(GN.t('boardManage')) + '</button>';
+      grid.parentNode.insertBefore(toolbar, grid);
+    }
 
-  if (!list || !list.length){
-    grid.innerHTML = '<div class="board-empty">' +
-      '<h4>' + GN.esc(GN.t('boardEmpty')) + '</h4></div>';
-    GN.bindBoardAdmin();
-    return;
-  }
+    if (!list.length){
+      grid.innerHTML = '<div class="board-empty">' +
+        '<h4>' + GN.esc(GN.t('boardEmpty')) + '</h4></div>';
+      GN.bindBoardAdmin();
+      return;
+    }
 
-  /* Sort by order (ascending), then by flag priority */
-  var flagPriority = { sd: 0, om: 1, eg: 2 };
-  var sorted = list.slice().sort(function(a, b){
-    var ao = (a.order != null && a.order !== '') ? Number(a.order) : 999;
-    var bo = (b.order != null && b.order !== '') ? Number(b.order) : 999;
-    if (ao !== bo) return ao - bo;
-    var ap = flagPriority[a.flag] != null ? flagPriority[a.flag] : 99;
-    var bp = flagPriority[b.flag] != null ? flagPriority[b.flag] : 99;
-    return ap - bp;
-  });
-
-  function flagStrip(flag){
-    var c = flag === 'eg' ? 3 : 4;
-    var spans = '';
-    for (var i = 0; i < c; i++) spans += '<span></span>';
-    return '<div class="flag-corner flag-' + flag + '">' + spans + '</div>';
-  }
-
-  grid.innerHTML = sorted.map(function(item, i){
-    var realIdx = list.indexOf(item);
-    var flag = item.flag || 'sd';
-    var photo = item.photo
-      ? '<img src="' + GN.escAttr(item.photo) + '" alt="" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'grid\'"><div class="fallback" style="display:none">' + GN.esc(GN.initial(item.name || '?')) + '</div>'
-      : '<div class="fallback">' + GN.esc(GN.initial(item.name || '?')) + '</div>';
-
-    var adminBtns = GN.session.isOwner
-      ? '<div class="bm-admin">' +
-          '<button class="edit" data-bm-edit="' + realIdx + '" title="' + GN.escAttr(GN.t('edit')) + '">' +
-            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>' +
-          '</button>' +
-          '<button class="del" data-bm-del="' + realIdx + '" title="' + GN.escAttr(GN.t('delete')) + '">' +
-            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M8 6V4h8v2M6 6v14a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V6"/></svg>' +
-          '</button>' +
-        '</div>'
-      : '';
-
-    return '<div class="bm-card" data-board-idx="' + realIdx + '">' +
-      adminBtns +
-      '<div class="bm-photo">' + photo + flagStrip(flag) + '</div>' +
-      '<div class="bm-info">' +
-        (item.role ? '<div class="bm-role" data-edit="board.' + realIdx + '.role">' + GN.esc(item.role) + '</div>' : '') +
-        '<h3 class="bm-name" data-edit="board.' + realIdx + '.name">' + GN.esc(item.name || '') + '</h3>' +
-        (item.subtitle ? '<div class="bm-subtitle" data-edit="board.' + realIdx + '.subtitle">' + GN.esc(item.subtitle) + '</div>' : '') +
-        (item.quote ? '<div class="bm-quote"><span data-edit="board.' + realIdx + '.quote">' + GN.esc(item.quote) + '</span></div>' : '') +
-      '</div>' +
-    '</div>';
-  }).join('');
-
-  GN.bindBoardAdmin();
-};
-
-GN.bindBoardAdmin = function(){
-  /* Admin manage button */
-  var btn = document.querySelector('[data-act="board-manage"]');
-  if (btn && !btn._bound){
-    btn._bound = true;
-    btn.addEventListener('click', function(){
-      if (!GN.session.isOwner){ GN.toast(GN.t('readOnlyNotice'), 'bad'); return; }
-      GN.openBoardManager();
+    /* Sort by order (asc), then by flag priority */
+    var flagPriority = { sd: 0, om: 1, eg: 2 };
+    var sorted = list.slice().sort(function(a, b){
+      var ao = (a.order != null && a.order !== '') ? Number(a.order) : 999;
+      var bo = (b.order != null && b.order !== '') ? Number(b.order) : 999;
+      if (ao !== bo) return ao - bo;
+      var ap = flagPriority[a.flag] != null ? flagPriority[a.flag] : 99;
+      var bp = flagPriority[b.flag] != null ? flagPriority[b.flag] : 99;
+      return ap - bp;
     });
-  }
 
-  /* Edit buttons on cards */
-  GN.$$('[data-bm-edit]').forEach(function(b){
-    if (b._bound) return;
-    b._bound = true;
-    b.addEventListener('click', function(e){
-      e.stopPropagation();
-      GN.openBoardMemberForm(+b.getAttribute('data-bm-edit'));
-    });
-  });
-
-  /* Delete buttons on cards */
-  GN.$$('[data-bm-del]').forEach(function(b){
-    if (b._bound) return;
-    b._bound = true;
-    b.addEventListener('click', function(e){
-      e.stopPropagation();
-      if (!GN.session.isOwner){ GN.toast(GN.t('readOnlyNotice'), 'bad'); return; }
-      var idx = +b.getAttribute('data-bm-del');
-      GN.confirm({
-        title: GN.t('delete'),
-        text: GN.t('boardDeleteConfirm'),
-        okText: GN.t('delete'),
-        cancelText: GN.t('cancel'),
-        danger: true
-      }).then(function(ok){
-        if (!ok) return;
-        GN.publicData.board.splice(idx, 1);
-        GN.savePublicData(GN.publicData).then(function(saved){
-          if (saved){
-            GN.toast(GN.t('deletedSuccess'), 'ok');
-            GN.renderBoard(GN.publicData.board);
-            GN.enableAdminEditing();
-          } else {
-            GN.toast(GN.t('saveFailed'), 'bad');
-          }
-        });
-      });
-    });
-  });
-};
-
-  /* ============================================================
-     News
-     ============================================================ */
-  GN.renderNews = function(list){
-  var grid = document.getElementById('newsGrid');
-  if (!grid) return;
-
-  if (!Array.isArray(list)) list = [];
-
-  var sorted = list.slice().sort(function(a, b){
-    return (b.date || '').localeCompare(a.date || '');
-  });
-
-  var featured = sorted[0];
-  var archive = sorted.slice(1);
-
-  /* If no news */
-  if (!sorted.length){
-    grid.innerHTML = '<div class="news-empty">' + GN.esc(GN.t('newsEmpty2')) + '</div>';
-    return;
-  }
-
-  var isAdmin = GN.session.isOwner && GN.session.isAdmin;
-  var html = '';
-
-  /* Featured */
-  if (featured){
-    var fImg = featured.image
-      ? '<img src="' + GN.escAttr(featured.image) + '" alt="" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'grid\'"><div class="no-img" style="display:none">' + GN.esc((featured.title || '?').charAt(0)) + '</div>'
-      : '<div class="no-img">' + GN.esc((featured.title || '?').charAt(0)) + '</div>';
-
-    html += '<div class="news-featured" data-news-featured="1">' +
-      '<div class="news-featured-img">' +
-        '<span class="news-featured-badge">' +
-          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 2 15 8l7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1 3-6Z"/></svg>' +
-          GN.esc(GN.t('newsFeatured')) +
-        '</span>' +
-        fImg +
-      '</div>' +
-      '<div class="news-featured-body">' +
-        (featured.date ? '<div class="date">' + GN.esc(GN.formatDate(featured.date)) + '</div>' : '') +
-        '<h2>' + GN.esc(featured.title || '') + '</h2>' +
-        '<p>' + GN.esc(featured.text || '') + '</p>' +
-        '<span class="read-more">' +
-          GN.esc(GN.t('newsOpenReader')) +
-          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="m15 18-6-6 6-6"/></svg>' +
-        '</span>' +
-      '</div>' +
-    '</div>';
-  }
-
-  /* Archive */
-  if (archive.length){
-    html += '<div class="news-section-title">' + GN.esc(GN.t('newsArchive')) + '</div>';
-    html += '<div class="news-grid-v2">';
-    archive.forEach(function(item){
+    grid.innerHTML = sorted.map(function(item){
       var realIdx = list.indexOf(item);
-      var img = item.image
-        ? '<img src="' + GN.escAttr(item.image) + '" alt="" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'grid\'"><div class="no-img" style="display:none">' + GN.esc((item.title || '?').charAt(0)) + '</div>'
-        : '<div class="no-img">' + GN.esc((item.title || '?').charAt(0)) + '</div>';
+      var flag = item.flag || 'sd';
+      var photo = item.photo
+        ? '<img src="' + GN.escAttr(item.photo) + '" alt="" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'grid\'"><div class="fallback" style="display:none">' + GN.esc(GN.initial(item.name || '?')) + '</div>'
+        : '<div class="fallback">' + GN.esc(GN.initial(item.name || '?')) + '</div>';
 
-      var adminBtns = isAdmin
-        ? '<div class="news-admin">' +
-            '<button class="edit" data-news-edit="' + realIdx + '" title="' + GN.escAttr(GN.t('edit')) + '">' +
+      var flagSpans = '';
+      var flagCount = flag === 'eg' ? 3 : 4;
+      for (var k = 0; k < flagCount; k++) flagSpans += '<span></span>';
+
+      var adminBtns = GN.session.isOwner
+        ? '<div class="bm-admin">' +
+            '<button class="edit" data-bm-edit="' + realIdx + '" title="' + GN.escAttr(GN.t('edit')) + '">' +
               '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>' +
             '</button>' +
-            '<button class="del" data-news-del="' + realIdx + '" title="' + GN.escAttr(GN.t('delete')) + '">' +
+            '<button class="del" data-bm-del="' + realIdx + '" title="' + GN.escAttr(GN.t('delete')) + '">' +
               '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M8 6V4h8v2M6 6v14a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V6"/></svg>' +
             '</button>' +
           '</div>'
         : '';
 
-      html += '<article class="news-card" data-news-idx="' + realIdx + '">' +
+      return '<div class="bm-card" data-board-idx="' + realIdx + '">' +
         adminBtns +
-        '<div class="thumb">' + img +
-          (item.date ? '<span class="date">' + GN.esc(GN.formatDate(item.date)) + '</span>' : '') +
+        '<div class="bm-photo">' + photo + '<div class="flag-corner flag-' + flag + '">' + flagSpans + '</div></div>' +
+        '<div class="bm-info">' +
+          (item.role ? '<div class="bm-role" data-edit="board.' + realIdx + '.role">' + GN.esc(item.role) + '</div>' : '') +
+          '<h3 class="bm-name" data-edit="board.' + realIdx + '.name">' + GN.esc(item.name || '') + '</h3>' +
+          (item.subtitle ? '<div class="bm-subtitle" data-edit="board.' + realIdx + '.subtitle">' + GN.esc(item.subtitle) + '</div>' : '') +
+          (item.quote ? '<div class="bm-quote"><span data-edit="board.' + realIdx + '.quote">' + GN.esc(item.quote) + '</span></div>' : '') +
         '</div>' +
-        '<div class="body">' +
-          '<h3>' + GN.esc(item.title || '') + '</h3>' +
-          '<p>' + GN.esc((item.text || '').slice(0, 130)) + ((item.text || '').length > 130 ? '…' : '') + '</p>' +
-          '<span class="read">' + GN.esc(GN.t('readMore')) +
-            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="m15 18-6-6 6-6"/></svg>' +
-          '</span>' +
-        '</div>' +
-      '</article>';
+      '</div>';
+    }).join('');
+
+    GN.bindBoardAdmin();
+  };
+
+  GN.bindBoardAdmin = function(){
+    /* Admin manage button */
+    var btn = document.querySelector('[data-act="board-manage"]');
+    if (btn && !btn._bound){
+      btn._bound = true;
+      btn.addEventListener('click', function(){
+        if (!GN.session.isOwner){ GN.toast(GN.t('readOnlyNotice'), 'bad'); return; }
+        GN.openBoardManager();
+      });
+    }
+
+    /* Edit buttons */
+    GN.$$('[data-bm-edit]').forEach(function(b){
+      if (b._bound) return;
+      b._bound = true;
+      b.addEventListener('click', function(e){
+        e.stopPropagation();
+        GN.openBoardMemberForm(+b.getAttribute('data-bm-edit'));
+      });
     });
-    html += '</div>';
-  }
 
-  grid.innerHTML = html;
-
-  /* Featured click */
-  var f = grid.querySelector('[data-news-featured]');
-  if (f && featured){
-    f.addEventListener('click', function(){
-      GN.openReader(featured);
-    });
-  }
-
-  /* Archive clicks */
-  GN.$$('.news-card').forEach(function(card){
-    card.addEventListener('click', function(e){
-      if (e.target.closest('[data-news-del]')) return;
-      if (e.target.closest('[data-news-edit]')) return;
-      var idx = +card.getAttribute('data-news-idx');
-      var item = list[idx];
-      if (item) GN.openReader(item);
-    });
-  });
-
-  /* Admin edit */
-  GN.$$('[data-news-edit]').forEach(function(btn){
-    btn.addEventListener('click', function(e){
-      e.stopPropagation();
-      GN.openWebsiteArticleForm(+btn.getAttribute('data-news-edit'));
-    });
-  });
-
-  /* Admin delete */
-  GN.$$('[data-news-del]').forEach(function(btn){
-    btn.addEventListener('click', function(e){
-      e.stopPropagation();
-      var idx = +btn.getAttribute('data-news-del');
-      GN.confirm({
-        title: GN.t('delete'),
-        text: GN.t('newsDeleteConfirm'),
-        okText: GN.t('delete'),
-        cancelText: GN.t('cancel'),
-        danger: true
-      }).then(function(ok){
-        if (!ok) return;
-        list.splice(idx, 1);
-        GN.savePublicData(GN.publicData).then(function(saved){
-          if (saved){
-            GN.toast(GN.t('deletedSuccess'), 'ok');
-            GN.renderNews(GN.publicData.news);
-            GN.enableAdminEditing();
-          } else {
-            GN.toast(GN.t('saveFailed'), 'bad');
-          }
+    /* Delete buttons */
+    GN.$$('[data-bm-del]').forEach(function(b){
+      if (b._bound) return;
+      b._bound = true;
+      b.addEventListener('click', function(e){
+        e.stopPropagation();
+        if (!GN.session.isOwner){ GN.toast(GN.t('readOnlyNotice'), 'bad'); return; }
+        var idx = +b.getAttribute('data-bm-del');
+        GN.confirm({
+          title: GN.t('delete'),
+          text: GN.t('boardDeleteConfirm'),
+          okText: GN.t('delete'),
+          cancelText: GN.t('cancel'),
+          danger: true
+        }).then(function(ok){
+          if (!ok) return;
+          GN.publicData.board.splice(idx, 1);
+          GN.savePublicData(GN.publicData).then(function(saved){
+            if (saved){
+              GN.toast(GN.t('deletedSuccess'), 'ok');
+              GN.renderBoard(GN.publicData.board);
+              GN.enableAdminEditing();
+            } else {
+              GN.toast(GN.t('saveFailed'), 'bad');
+            }
+          });
         });
       });
     });
-  });
-};
+  };
+
+  /* ============================================================
+     News (Featured + Archive)
+     ============================================================ */
+  GN.renderNews = function(list){
+    var grid = document.getElementById('newsGrid');
+    if (!grid) return;
+
+    if (!Array.isArray(list)) list = [];
+
+    var sorted = list.slice().sort(function(a, b){
+      return (b.date || '').localeCompare(a.date || '');
+    });
+
+    var featured = sorted[0];
+    var archive = sorted.slice(1);
+
+    if (!sorted.length){
+      grid.innerHTML = '<div class="news-empty">' + GN.esc(GN.t('newsEmpty2')) + '</div>';
+      return;
+    }
+
+    var isAdmin = GN.session.isOwner && GN.session.isAdmin;
+    var html = '';
+
+    /* Featured */
+    if (featured){
+      var fImg = featured.image
+        ? '<img src="' + GN.escAttr(featured.image) + '" alt="" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'grid\'"><div class="no-img" style="display:none">' + GN.esc((featured.title || '?').charAt(0)) + '</div>'
+        : '<div class="no-img">' + GN.esc((featured.title || '?').charAt(0)) + '</div>';
+
+      html += '<div class="news-featured" data-news-featured="1">' +
+        '<div class="news-featured-img">' +
+          '<span class="news-featured-badge">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 2 15 8l7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1 3-6Z"/></svg>' +
+            GN.esc(GN.t('newsFeatured')) +
+          '</span>' +
+          fImg +
+        '</div>' +
+        '<div class="news-featured-body">' +
+          (featured.date ? '<div class="date">' + GN.esc(GN.formatDate(featured.date)) + '</div>' : '') +
+          '<h2>' + GN.esc(featured.title || '') + '</h2>' +
+          '<p>' + GN.esc(featured.text || '') + '</p>' +
+          '<span class="read-more">' +
+            GN.esc(GN.t('newsOpenReader')) +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="m15 18-6-6 6-6"/></svg>' +
+          '</span>' +
+        '</div>' +
+      '</div>';
+    }
+
+    /* Archive */
+    if (archive.length){
+      html += '<div class="news-section-title">' + GN.esc(GN.t('newsArchive')) + '</div>';
+      html += '<div class="news-grid-v2">';
+      archive.forEach(function(item){
+        var realIdx = list.indexOf(item);
+        var img = item.image
+          ? '<img src="' + GN.escAttr(item.image) + '" alt="" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'grid\'"><div class="no-img" style="display:none">' + GN.esc((item.title || '?').charAt(0)) + '</div>'
+          : '<div class="no-img">' + GN.esc((item.title || '?').charAt(0)) + '</div>';
+
+        var adminBtns = isAdmin
+          ? '<div class="news-admin">' +
+              '<button class="edit" data-news-edit="' + realIdx + '" title="' + GN.escAttr(GN.t('edit')) + '">' +
+                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>' +
+              '</button>' +
+              '<button class="del" data-news-del="' + realIdx + '" title="' + GN.escAttr(GN.t('delete')) + '">' +
+                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M8 6V4h8v2M6 6v14a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V6"/></svg>' +
+              '</button>' +
+            '</div>'
+          : '';
+
+        html += '<article class="news-card" data-news-idx="' + realIdx + '">' +
+          adminBtns +
+          '<div class="thumb">' + img +
+            (item.date ? '<span class="date">' + GN.esc(GN.formatDate(item.date)) + '</span>' : '') +
+          '</div>' +
+          '<div class="body">' +
+            '<h3>' + GN.esc(item.title || '') + '</h3>' +
+            '<p>' + GN.esc((item.text || '').slice(0, 130)) + ((item.text || '').length > 130 ? '…' : '') + '</p>' +
+            '<span class="read">' + GN.esc(GN.t('readMore')) +
+              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="m15 18-6-6 6-6"/></svg>' +
+            '</span>' +
+          '</div>' +
+        '</article>';
+      });
+      html += '</div>';
+    }
+
+    grid.innerHTML = html;
+
+    /* Featured click */
+    var f = grid.querySelector('[data-news-featured]');
+    if (f && featured){
+      f.addEventListener('click', function(){ GN.openReader(featured); });
+    }
+
+    /* Archive clicks */
+    GN.$$('.news-card').forEach(function(card){
+      card.addEventListener('click', function(e){
+        if (e.target.closest('[data-news-del]')) return;
+        if (e.target.closest('[data-news-edit]')) return;
+        var idx = +card.getAttribute('data-news-idx');
+        var item = list[idx];
+        if (item) GN.openReader(item);
+      });
+    });
+
+    /* Admin edit */
+    GN.$$('[data-news-edit]').forEach(function(btn){
+      btn.addEventListener('click', function(e){
+        e.stopPropagation();
+        GN.openWebsiteArticleForm(+btn.getAttribute('data-news-edit'));
+      });
+    });
+
+    /* Admin delete */
+    GN.$$('[data-news-del]').forEach(function(btn){
+      btn.addEventListener('click', function(e){
+        e.stopPropagation();
+        var idx = +btn.getAttribute('data-news-del');
+        GN.confirm({
+          title: GN.t('delete'),
+          text: GN.t('newsDeleteConfirm'),
+          okText: GN.t('delete'),
+          cancelText: GN.t('cancel'),
+          danger: true
+        }).then(function(ok){
+          if (!ok) return;
+          list.splice(idx, 1);
+          GN.savePublicData(GN.publicData).then(function(saved){
+            if (saved){
+              GN.toast(GN.t('deletedSuccess'), 'ok');
+              GN.renderNews(GN.publicData.news);
+              GN.enableAdminEditing();
+            } else {
+              GN.toast(GN.t('saveFailed'), 'bad');
+            }
+          });
+        });
+      });
+    });
+  };
 
   /* ============================================================
      Social links
@@ -559,7 +557,7 @@ GN.bindBoardAdmin = function(){
   };
 
   /* ============================================================
-     Reader modal
+     Reader modal (Article)
      ============================================================ */
   GN.openReader = function(item){
     if (!item) return;
@@ -580,7 +578,8 @@ GN.bindBoardAdmin = function(){
     date.textContent = GN.formatDate(item.date);
     title.textContent = item.title || '';
     text.textContent = item.text || '';
-        /* Bind close button (once) */
+
+    /* Bind close button (once) */
     var closeBtn = modal.querySelector('[data-close-modal="readerModal"]');
     if (closeBtn && !closeBtn._bound){
       closeBtn._bound = true;
@@ -589,6 +588,7 @@ GN.bindBoardAdmin = function(){
         GN.closeModal('readerModal');
       });
     }
+
     /* Click outside closes */
     if (!modal._backdropBound){
       modal._backdropBound = true;
@@ -596,11 +596,12 @@ GN.bindBoardAdmin = function(){
         if (e.target === modal) GN.closeModal('readerModal');
       });
     }
+
     GN.openModal('readerModal');
   };
 
   /* ============================================================
-     Item actions (edit + delete)
+     Item actions (edit + delete) — for services & advantages
      ============================================================ */
   GN.itemActions = function(listName, idx){
     return '<div class="item-actions">' +
@@ -614,17 +615,7 @@ GN.bindBoardAdmin = function(){
   };
 
   /* ============================================================
-     Flag strip
-     ============================================================ */
-  GN.flagStrip = function(flag){
-    var count = flag === 'eg' ? 3 : 4;
-    var spans = '';
-    for (var i = 0; i < count; i++) spans += '<span></span>';
-    return '<div class="flag-strip flag-' + flag + '">' + spans + '</div>';
-  };
-
-  /* ============================================================
-     Icon SVGs
+     Icon SVGs (services & advantages)
      ============================================================ */
   GN.iconSvg = function(name){
     var icons = {
@@ -658,6 +649,7 @@ GN.bindBoardAdmin = function(){
   console.log('[Gold Nile] public.js part 1 loaded');
 
 })();
+
 /* Gold Nile - Public Site Admin Editing v1.0.0 */
 (function(){
   'use strict';
@@ -716,7 +708,7 @@ GN.bindBoardAdmin = function(){
   };
 
   /* ============================================================
-     Admin toggle
+     Admin toggle (public site header)
      ============================================================ */
   GN.initAdminToggle = function(){
     var btn = document.getElementById('adminToggle');
@@ -794,7 +786,7 @@ GN.bindBoardAdmin = function(){
   };
 
   /* ============================================================
-     Delete item
+     Delete item (services / advantages)
      ============================================================ */
   GN.bindDeleteHandlers = function(){
     document.addEventListener('click', function(e){
@@ -834,7 +826,7 @@ GN.bindBoardAdmin = function(){
   };
 
   /* ============================================================
-     News form
+     News form (Public quick-add)
      ============================================================ */
   GN.openNewsForm = function(idx){
     if (!GN.session.isAdmin) {
@@ -912,6 +904,9 @@ GN.bindBoardAdmin = function(){
     };
   };
 
+  /* ============================================================
+     Delete news
+     ============================================================ */
   GN.deleteNews = function(idx){
     if (!GN.session.isAdmin) {
       GN.toast(GN.t('readOnlyNotice'), 'bad');
@@ -941,7 +936,7 @@ GN.bindBoardAdmin = function(){
   };
 
   /* ============================================================
-     Social links admin
+     Social links inputs
      ============================================================ */
   GN.bindSocialInputs = function(){
     GN.$$('[data-social-url]').forEach(function(input){
@@ -954,7 +949,6 @@ GN.bindBoardAdmin = function(){
         if (!GN.publicData.settings.social) GN.publicData.settings.social = {};
         GN.publicData.settings.social[key] = val;
 
-        /* Update the button live */
         var btn = document.querySelector('[data-social="' + key + '"]');
         if (btn) {
           if (val) {
@@ -1003,7 +997,7 @@ GN.bindBoardAdmin = function(){
   };
 
   /* ============================================================
-     Photo change
+     Photo change (data-edit-img)
      ============================================================ */
   GN.bindPhotoEdits = function(){
     document.addEventListener('click', function(e){
@@ -1047,17 +1041,10 @@ GN.bindBoardAdmin = function(){
      ============================================================ */
   GN.initLangToggle = function(){
     var btn = document.getElementById('langBtn');
-    if (btn) {
-      btn.addEventListener('click', function(){
-        GN.toggleLang();
-      });
-    }
+    if (btn) btn.addEventListener('click', function(){ GN.toggleLang(); });
+
     var btnDash = document.getElementById('langBtnDash');
-    if (btnDash) {
-      btnDash.addEventListener('click', function(){
-        GN.toggleLang();
-      });
-    }
+    if (btnDash) btnDash.addEventListener('click', function(){ GN.toggleLang(); });
   };
 
   /* ============================================================
@@ -1074,161 +1061,162 @@ GN.bindBoardAdmin = function(){
     GN.bindPhotoEdits();
     GN.bindEditEvents();
   };
+
   /* ============================================================
-   BOARD MEMBER FORM (Add / Edit)
-   ============================================================ */
-GN.openBoardMemberForm = function(idx){
-  if (!GN.session.isOwner){ GN.toast(GN.t('readOnlyNotice'), 'bad'); return; }
-  var list = GN.publicData.board || (GN.publicData.board = []);
-  var isEdit = idx >= 0;
-  var item = isEdit ? list[idx] : { name:'', role:'', subtitle:'', quote:'', photo:'', flag:'sd', order:'' };
+     BOARD MEMBER FORM (Add / Edit) - Owner only
+     ============================================================ */
+  GN.openBoardMemberForm = function(idx){
+    if (!GN.session.isOwner){ GN.toast(GN.t('readOnlyNotice'), 'bad'); return; }
+    var list = GN.publicData.board || (GN.publicData.board = []);
+    var isEdit = idx >= 0;
+    var item = isEdit ? list[idx] : { name:'', role:'', subtitle:'', quote:'', photo:'', flag:'sd', order:'' };
 
-  var body = document.getElementById('formModalBody');
-  var titleEl = document.getElementById('formModalTitle');
-  if (!body || !titleEl) return;
-  titleEl.textContent = isEdit ? GN.t('boardEditMember') : GN.t('boardAddMember');
+    var body = document.getElementById('formModalBody');
+    var titleEl = document.getElementById('formModalTitle');
+    if (!body || !titleEl) return;
+    titleEl.textContent = isEdit ? GN.t('boardEditMember') : GN.t('boardAddMember');
 
-  function opt(list, sel){
-    return list.map(function(o){
-      return '<option value="' + GN.escAttr(o.value) + '"' + (o.value === sel ? ' selected' : '') + '>' + GN.esc(o.label) + '</option>';
-    }).join('');
-  }
-
-  body.innerHTML = '<div class="form-grid">' +
-    '<div class="field full"><label>' + GN.esc(GN.t('boardName')) + ' <span class="req">*</span></label>' +
-      '<div class="input-wrap"><input type="text" id="bm_name" maxlength="80" value="' + GN.escAttr(item.name || '') + '"></div></div>' +
-    '<div class="field"><label>' + GN.esc(GN.t('boardRole')) + '</label>' +
-      '<div class="input-wrap"><input type="text" id="bm_role" maxlength="80" value="' + GN.escAttr(item.role || '') + '"></div></div>' +
-    '<div class="field"><label>' + GN.esc(GN.t('boardSubtitle')) + '</label>' +
-      '<div class="input-wrap"><input type="text" id="bm_subtitle" maxlength="80" value="' + GN.escAttr(item.subtitle || '') + '"></div></div>' +
-    '<div class="field"><label>' + GN.esc(GN.t('boardFlag')) + '</label>' +
-      '<div class="input-wrap"><select id="bm_flag">' +
-        opt([
-          { value:'sd', label: GN.t('boardFlagSudan') },
-          { value:'om', label: GN.t('boardFlagOman') },
-          { value:'eg', label: GN.t('boardFlagEgypt') }
-        ], item.flag || 'sd') +
-      '</select></div></div>' +
-    '<div class="field"><label>' + GN.esc(GN.t('boardOrder')) + '</label>' +
-      '<div class="input-wrap"><input type="number" id="bm_order" min="1" max="99" value="' + GN.escAttr(item.order == null ? '' : item.order) + '"></div></div>' +
-    '<div class="field full"><label>' + GN.esc(GN.t('boardPhotoUrl')) + '</label>' +
-      '<div class="input-wrap"><input type="url" id="bm_photo" dir="ltr" placeholder="https://..." value="' + GN.escAttr(item.photo || '') + '"></div></div>' +
-    '<div class="field full"><label>' + GN.esc(GN.t('boardQuote')) + '</label>' +
-      '<div class="input-wrap"><textarea id="bm_quote" rows="4" maxlength="500">' + GN.esc(item.quote || '') + '</textarea></div></div>' +
-  '</div>';
-
-  GN.openModal('formModal');
-
-  var submitBtn = document.getElementById('formModalSubmit');
-  submitBtn.onclick = function(){
-    var name = document.getElementById('bm_name').value.trim();
-    if (!name){ GN.toast(GN.t('fieldRequired'), 'bad'); return; }
-
-    var obj = {
-      name: name,
-      role: document.getElementById('bm_role').value.trim(),
-      subtitle: document.getElementById('bm_subtitle').value.trim(),
-      flag: document.getElementById('bm_flag').value,
-      order: document.getElementById('bm_order').value ? Number(document.getElementById('bm_order').value) : '',
-      photo: document.getElementById('bm_photo').value.trim(),
-      quote: document.getElementById('bm_quote').value.trim()
-    };
-
-    if (isEdit) list[idx] = obj;
-    else list.push(obj);
-
-    GN.savePublicData(GN.publicData).then(function(ok){
-      if (ok){
-        GN.toast(GN.t('savedSuccess'), 'ok');
-        GN.closeModal('formModal');
-        GN.renderBoard(GN.publicData.board);
-        GN.enableAdminEditing();
-      } else {
-        GN.toast(GN.t('saveFailed'), 'bad');
-      }
-    });
-  };
-};
-
-/* ============================================================
-   BOARD MANAGER (list of members)
-   ============================================================ */
-GN.openBoardManager = function(){
-  if (!GN.session.isOwner){ GN.toast(GN.t('readOnlyNotice'), 'bad'); return; }
-  var list = GN.publicData.board || [];
-
-  var body = document.getElementById('formModalBody');
-  var titleEl = document.getElementById('formModalTitle');
-  if (!body || !titleEl) return;
-  titleEl.textContent = GN.t('boardMembersList');
-
-  function renderList(){
-    if (!list.length){
-      return '<div class="cat-empty">' + GN.esc(GN.t('boardEmpty')) + '</div>';
+    function opt(list, sel){
+      return list.map(function(o){
+        return '<option value="' + GN.escAttr(o.value) + '"' + (o.value === sel ? ' selected' : '') + '>' + GN.esc(o.label) + '</option>';
+      }).join('');
     }
-    return list.map(function(m, i){
-      return '<div class="cat-chip" style="justify-content:space-between;width:100%;padding:10px 14px">' +
-        '<span style="display:flex;align-items:center;gap:8px">' +
-          '<b style="font-weight:700">' + GN.esc(m.name || '-') + '</b>' +
-          (m.role ? '<small style="color:var(--ink-3)">' + GN.esc(m.role) + '</small>' : '') +
-        '</span>' +
-        '<span style="display:flex;gap:4px">' +
-          '<button class="x" data-bmgr-edit="' + i + '" type="button" style="background:var(--nile-l);color:var(--nile)">✎</button>' +
-          '<button class="x" data-bmgr-del="' + i + '" type="button">×</button>' +
-        '</span>' +
-      '</div>';
-    }).join('');
-  }
 
-  body.innerHTML =
-    '<button class="btn btn-pri" id="bmgr_add" type="button" style="width:100%;margin-bottom:14px">' +
-      '+ ' + GN.esc(GN.t('boardAddMember')) + '</button>' +
-    '<div class="cat-list" id="bmgr_list" style="flex-direction:column;align-items:stretch">' + renderList() + '</div>';
+    body.innerHTML = '<div class="form-grid">' +
+      '<div class="field full"><label>' + GN.esc(GN.t('boardName')) + ' <span class="req">*</span></label>' +
+        '<div class="input-wrap"><input type="text" id="bm_name" maxlength="80" value="' + GN.escAttr(item.name || '') + '"></div></div>' +
+      '<div class="field"><label>' + GN.esc(GN.t('boardRole')) + '</label>' +
+        '<div class="input-wrap"><input type="text" id="bm_role" maxlength="80" value="' + GN.escAttr(item.role || '') + '"></div></div>' +
+      '<div class="field"><label>' + GN.esc(GN.t('boardSubtitle')) + '</label>' +
+        '<div class="input-wrap"><input type="text" id="bm_subtitle" maxlength="80" value="' + GN.escAttr(item.subtitle || '') + '"></div></div>' +
+      '<div class="field"><label>' + GN.esc(GN.t('boardFlag')) + '</label>' +
+        '<div class="input-wrap"><select id="bm_flag">' +
+          opt([
+            { value:'sd', label: GN.t('boardFlagSudan') },
+            { value:'om', label: GN.t('boardFlagOman') },
+            { value:'eg', label: GN.t('boardFlagEgypt') }
+          ], item.flag || 'sd') +
+        '</select></div></div>' +
+      '<div class="field"><label>' + GN.esc(GN.t('boardOrder')) + '</label>' +
+        '<div class="input-wrap"><input type="number" id="bm_order" min="1" max="99" value="' + GN.escAttr(item.order == null ? '' : item.order) + '"></div></div>' +
+      '<div class="field full"><label>' + GN.esc(GN.t('boardPhotoUrl')) + '</label>' +
+        '<div class="input-wrap"><input type="url" id="bm_photo" dir="ltr" placeholder="https://..." value="' + GN.escAttr(item.photo || '') + '"></div></div>' +
+      '<div class="field full"><label>' + GN.esc(GN.t('boardQuote')) + '</label>' +
+        '<div class="input-wrap"><textarea id="bm_quote" rows="4" maxlength="500">' + GN.esc(item.quote || '') + '</textarea></div></div>' +
+    '</div>';
 
-  /* Hide default submit button */
-  var sub = document.getElementById('formModalSubmit');
-  if (sub) sub.style.display = 'none';
+    GN.openModal('formModal');
 
-  GN.openModal('formModal');
+    var submitBtn = document.getElementById('formModalSubmit');
+    submitBtn.onclick = function(){
+      var name = document.getElementById('bm_name').value.trim();
+      if (!name){ GN.toast(GN.t('fieldRequired'), 'bad'); return; }
 
-  function bindList(){
-    GN.$$('[data-bmgr-edit]').forEach(function(b){
-      b.addEventListener('click', function(){
-        GN.closeModal('formModal');
-        setTimeout(function(){ GN.openBoardMemberForm(+b.getAttribute('data-bmgr-edit')); }, 200);
+      var obj = {
+        name: name,
+        role: document.getElementById('bm_role').value.trim(),
+        subtitle: document.getElementById('bm_subtitle').value.trim(),
+        flag: document.getElementById('bm_flag').value,
+        order: document.getElementById('bm_order').value ? Number(document.getElementById('bm_order').value) : '',
+        photo: document.getElementById('bm_photo').value.trim(),
+        quote: document.getElementById('bm_quote').value.trim()
+      };
+
+      if (isEdit) list[idx] = obj;
+      else list.push(obj);
+
+      GN.savePublicData(GN.publicData).then(function(ok){
+        if (ok){
+          GN.toast(GN.t('savedSuccess'), 'ok');
+          GN.closeModal('formModal');
+          GN.renderBoard(GN.publicData.board);
+          GN.enableAdminEditing();
+        } else {
+          GN.toast(GN.t('saveFailed'), 'bad');
+        }
       });
-    });
-    GN.$$('[data-bmgr-del]').forEach(function(b){
-      b.addEventListener('click', function(){
-        var i = +b.getAttribute('data-bmgr-del');
-        GN.confirm({
-          title: GN.t('delete'),
-          text: GN.t('boardDeleteConfirm'),
-          okText: GN.t('delete'),
-          cancelText: GN.t('cancel'),
-          danger: true
-        }).then(function(ok){
-          if (!ok) return;
-          list.splice(i, 1);
-          GN.savePublicData(GN.publicData).then(function(saved){
-            if (saved){
-              GN.toast(GN.t('deletedSuccess'), 'ok');
-              document.getElementById('bmgr_list').innerHTML = renderList();
-              bindList();
-              GN.renderBoard(GN.publicData.board);
-            }
+    };
+  };
+
+  /* ============================================================
+     BOARD MANAGER (list of members)
+     ============================================================ */
+  GN.openBoardManager = function(){
+    if (!GN.session.isOwner){ GN.toast(GN.t('readOnlyNotice'), 'bad'); return; }
+    var list = GN.publicData.board || [];
+
+    var body = document.getElementById('formModalBody');
+    var titleEl = document.getElementById('formModalTitle');
+    if (!body || !titleEl) return;
+    titleEl.textContent = GN.t('boardMembersList');
+
+    function renderList(){
+      if (!list.length){
+        return '<div class="cat-empty">' + GN.esc(GN.t('boardEmpty')) + '</div>';
+      }
+      return list.map(function(m, i){
+        return '<div class="cat-chip" style="justify-content:space-between;width:100%;padding:10px 14px">' +
+          '<span style="display:flex;align-items:center;gap:8px">' +
+            '<b style="font-weight:700">' + GN.esc(m.name || '-') + '</b>' +
+            (m.role ? '<small style="color:var(--ink-3)">' + GN.esc(m.role) + '</small>' : '') +
+          '</span>' +
+          '<span style="display:flex;gap:4px">' +
+            '<button class="x" data-bmgr-edit="' + i + '" type="button" style="background:var(--nile-l);color:var(--nile)">✎</button>' +
+            '<button class="x" data-bmgr-del="' + i + '" type="button">×</button>' +
+          '</span>' +
+        '</div>';
+      }).join('');
+    }
+
+    body.innerHTML =
+      '<button class="btn btn-pri" id="bmgr_add" type="button" style="width:100%;margin-bottom:14px">' +
+        '+ ' + GN.esc(GN.t('boardAddMember')) + '</button>' +
+      '<div class="cat-list" id="bmgr_list" style="flex-direction:column;align-items:stretch">' + renderList() + '</div>';
+
+    var sub = document.getElementById('formModalSubmit');
+    if (sub) sub.style.display = 'none';
+
+    GN.openModal('formModal');
+
+    function bindList(){
+      GN.$$('[data-bmgr-edit]').forEach(function(b){
+        b.addEventListener('click', function(){
+          GN.closeModal('formModal');
+          setTimeout(function(){ GN.openBoardMemberForm(+b.getAttribute('data-bmgr-edit')); }, 200);
+        });
+      });
+      GN.$$('[data-bmgr-del]').forEach(function(b){
+        b.addEventListener('click', function(){
+          var i = +b.getAttribute('data-bmgr-del');
+          GN.confirm({
+            title: GN.t('delete'),
+            text: GN.t('boardDeleteConfirm'),
+            okText: GN.t('delete'),
+            cancelText: GN.t('cancel'),
+            danger: true
+          }).then(function(ok){
+            if (!ok) return;
+            list.splice(i, 1);
+            GN.savePublicData(GN.publicData).then(function(saved){
+              if (saved){
+                GN.toast(GN.t('deletedSuccess'), 'ok');
+                document.getElementById('bmgr_list').innerHTML = renderList();
+                bindList();
+                GN.renderBoard(GN.publicData.board);
+              }
+            });
           });
         });
       });
-    });
-  }
-  bindList();
+    }
+    bindList();
 
-  document.getElementById('bmgr_add').onclick = function(){
-    GN.closeModal('formModal');
-    setTimeout(function(){ GN.openBoardMemberForm(-1); }, 200);
+    document.getElementById('bmgr_add').onclick = function(){
+      GN.closeModal('formModal');
+      setTimeout(function(){ GN.openBoardMemberForm(-1); }, 200);
+    };
   };
-};
+
   console.log('[Gold Nile] public.js part 2 loaded');
 
 })();

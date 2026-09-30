@@ -13,6 +13,8 @@
       langLabel: 'EN',
       appName: 'ذهب النيل للأعمال المتكاملة المحدودة',
       appShort: 'ذهب النيل',
+      brand: 'ذهب النيل',
+      brandSub: 'للأعمال المتكاملة المحدودة',
       cancel: 'إلغاء',
       save: 'حفظ',
       saveChanges: 'حفظ التعديلات',
@@ -159,7 +161,7 @@
       contactEmailLabel: 'البريد الإلكتروني',
       contactPhoneLabel: 'الهاتف',
       contactWhatsappLabel: 'واتساب',
-      contactEmpty: 'لم يُضف بعد',
+      contactEmpty: '',
       contactAdminTitle: 'بيانات التواصل (وضع الأدمن)',
 
       /* CTA */
@@ -845,6 +847,8 @@
       langLabel: 'ع',
       appName: 'Zaheb Alnile for Integrated Services Ltd.',
       appShort: 'Gold Nile',
+      brand: 'Gold Nile',
+      brandSub: 'for Integrated Services Ltd.',
       cancel: 'Cancel',
       save: 'Save',
       saveChanges: 'Save Changes',

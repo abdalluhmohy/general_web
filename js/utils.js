@@ -4,7 +4,9 @@
 
   var GN = window.GN = window.GN || {};
 
-  /* DOM */
+  /* ============================================================
+     DOM
+     ============================================================ */
   GN.$  = function(sel, root){ return (root || document).querySelector(sel); };
   GN.$$ = function(sel, root){ return Array.prototype.slice.call((root || document).querySelectorAll(sel)); };
 
@@ -37,7 +39,9 @@
     return el;
   };
 
-  /* Escape */
+  /* ============================================================
+     Escape
+     ============================================================ */
   GN.esc = function(s){
     return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){
       return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
@@ -45,7 +49,9 @@
   };
   GN.escAttr = GN.esc;
 
-  /* Numbers */
+  /* ============================================================
+     Numbers & Currency
+     ============================================================ */
   GN.nf  = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 });
   GN.nf2 = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 });
 
@@ -55,23 +61,27 @@
     return fmt.format(n);
   };
 
+  /**
+   * إرجاع رمز العملة من الكود (SDG → ج.س)
+   * @param {string} code
+   * @returns {string}
+   */
+  GN.currencySymbol = function(code){
+    var cur = code || 'USD';
+    var list = (window.GN_CONST && window.GN_CONST.CURRENCIES) || [];
+    var found = list.filter(function(x){ return x.code === cur; })[0];
+    return found ? found.symbol : cur;
+  };
+
   GN.formatMoney = function(n, currency){
     if (n == null || isNaN(n)) return '-';
-    var cur = currency || 'USD';
-    var list = (window.GN_CONST && window.GN_CONST.CURRENCIES) || [];
-    var found = null;
-    for (var i = 0; i < list.length; i++) if (list[i].code === cur) found = list[i];
-    var symbol = found ? found.symbol : cur;
+    var symbol = GN.currencySymbol(currency || 'USD');
     return '<bdi class="num">' + GN.nf2.format(n) + '</bdi> <span class="cur">' + symbol + '</span>';
   };
 
   GN.formatMoneyPlain = function(n, currency){
     if (n == null || isNaN(n)) return '-';
-    var cur = currency || 'USD';
-    var list = (window.GN_CONST && window.GN_CONST.CURRENCIES) || [];
-    var found = null;
-    for (var i = 0; i < list.length; i++) if (list[i].code === cur) found = list[i];
-    var symbol = found ? found.symbol : cur;
+    var symbol = GN.currencySymbol(currency || 'USD');
     return GN.nf2.format(n) + ' ' + symbol;
   };
 
@@ -81,7 +91,9 @@
     return isFinite(n) ? n : null;
   };
 
-  /* Dates */
+  /* ============================================================
+     Dates
+     ============================================================ */
   GN.today = function(){ return new Date().toISOString().slice(0, 10); };
   GN.now = function(){ return new Date().toISOString(); };
 
@@ -113,18 +125,18 @@
       var dt = typeof d === 'string' ? new Date(d) : d;
       var diff = (Date.now() - dt.getTime()) / 1000;
       var l = lang || GN.lang || 'ar';
-      if (diff < 60) return l === 'ar' ? '\u0627\u0644\u0622\u0646' : 'Just now';
+      if (diff < 60) return l === 'ar' ? 'الآن' : 'Just now';
       if (diff < 3600) {
         var m = Math.floor(diff / 60);
-        return l === 'ar' ? m + ' \u062f\u0642\u064a\u0642\u0629' : m + 'm ago';
+        return l === 'ar' ? m + ' دقيقة' : m + 'm ago';
       }
       if (diff < 86400) {
         var h = Math.floor(diff / 3600);
-        return l === 'ar' ? h + ' \u0633\u0627\u0639\u0629' : h + 'h ago';
+        return l === 'ar' ? h + ' ساعة' : h + 'h ago';
       }
       if (diff < 2592000) {
         var dd = Math.floor(diff / 86400);
-        return l === 'ar' ? dd + ' \u064a\u0648\u0645' : dd + 'd ago';
+        return l === 'ar' ? dd + ' يوم' : dd + 'd ago';
       }
       return GN.formatDate(dt, l);
     } catch (e) { return ''; }
@@ -155,7 +167,9 @@
     return dt.toLocaleDateString(loc, { year:'numeric', month:'long' });
   };
 
-  /* IDs */
+  /* ============================================================
+     IDs & Codes
+     ============================================================ */
   GN.uid = function(){
     if (window.crypto && window.crypto.randomUUID) return crypto.randomUUID();
     return 'id-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
@@ -174,7 +188,9 @@
     return prefix + '-' + year + '-' + next;
   };
 
-  /* Objects */
+  /* ============================================================
+     Objects
+     ============================================================ */
   GN.clone = function(obj){
     if (obj == null) return obj;
     if (typeof structuredClone === 'function') return structuredClone(obj);
@@ -243,7 +259,9 @@
     }, 0);
   };
 
-  /* Local Storage */
+  /* ============================================================
+     Local Storage
+     ============================================================ */
   GN.ls = {
     get: function(key, def){
       try {
@@ -261,7 +279,9 @@
     }
   };
 
-  /* Timing */
+  /* ============================================================
+     Timing
+     ============================================================ */
   GN.debounce = function(fn, ms){
     var t;
     return function(){
@@ -282,7 +302,9 @@
     };
   };
 
-  /* Validation */
+  /* ============================================================
+     Validation
+     ============================================================ */
   GN.isEmail = function(s){
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(s || '').trim());
   };
@@ -308,18 +330,29 @@
     return s;
   };
 
-  /* Colors */
+  /* ============================================================
+     Colors & Initials
+     ============================================================ */
   GN.randomColor = function(){
     var colors = ['#1E6B67','#C79A3D','#2B7A55','#B33A2A','#8C6A1F','#3E8C86','#5FA19C'];
     return colors[Math.floor(Math.random() * colors.length)];
   };
 
+  /**
+   * استخراج أول حرف من الاسم (يعمل مع العربية والإنجليزية)
+   */
   GN.initial = function(name){
-    if (!name) return '?';
-    return String(name).trim().charAt(0).toUpperCase();
+    if (name == null) return '?';
+    var s = String(name).trim();
+    if (!s) return '?';
+    // استخدام Array.from للتعامل الصحيح مع الحروف العربية والـ emojis
+    var chars = Array.from(s);
+    return chars[0].toUpperCase();
   };
 
-  /* Download */
+  /* ============================================================
+     Download
+     ============================================================ */
   GN.download = function(filename, content, mime){
     var blob = new Blob([content], { type: mime || 'text/plain;charset=utf-8' });
     var url = URL.createObjectURL(blob);
@@ -345,7 +378,9 @@
     GN.download(filename, '\ufeff' + csv, 'text/csv;charset=utf-8');
   };
 
-  /* Clipboard */
+  /* ============================================================
+     Clipboard
+     ============================================================ */
   GN.copyText = function(text){
     return new Promise(function(resolve){
       if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -367,7 +402,9 @@
     });
   };
 
-  /* Modals */
+  /* ============================================================
+     Modals
+     ============================================================ */
   GN.openModal = function(id){
     var el = document.getElementById(id);
     if (!el) return;
@@ -388,7 +425,9 @@
     document.body.style.overflow = '';
   };
 
-  /* Toast */
+  /* ============================================================
+     Toast
+     ============================================================ */
   var toastTimer;
   GN.toast = function(msg, type){
     var el = document.getElementById('toast');
@@ -401,7 +440,9 @@
     toastTimer = setTimeout(function(){ el.classList.remove('on'); }, 2800);
   };
 
-  /* Loading */
+  /* ============================================================
+     Loading
+     ============================================================ */
   GN.showLoading = function(text){
     var el = document.getElementById('loadingOverlay');
     var txt = document.getElementById('loadingText');
@@ -415,7 +456,9 @@
     if (el) el.hidden = true;
   };
 
-  /* Confirm */
+  /* ============================================================
+     Confirm Dialog
+     ============================================================ */
   GN.confirm = function(opts){
     return new Promise(function(resolve){
       var modal = document.getElementById('confirmModal');
@@ -433,7 +476,7 @@
         danger: true
       }, opts || {});
       title.textContent = o.title;
-      text.innerHTML = o.text;
+      text.textContent = o.text;
       okBtn.textContent = o.okText;
       cancelBtn.textContent = o.cancelText;
       icon.className = 'modal-icon ' + (o.danger ? 'bad' : 'ok');
@@ -456,14 +499,18 @@
     });
   };
 
-  /* Ready */
+  /* ============================================================
+     Ready
+     ============================================================ */
   GN.ready = function(fn){
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', fn);
     } else { fn(); }
   };
 
-  /* Dates init */
+  /* ============================================================
+     Dates init (set today on empty date inputs)
+     ============================================================ */
   GN.initDates = function(root){
     var inputs = (root || document).querySelectorAll('input[type="date"]');
     for (var i = 0; i < inputs.length; i++) {
@@ -471,7 +518,9 @@
     }
   };
 
-  /* File readers */
+  /* ============================================================
+     File readers
+     ============================================================ */
   GN.readFile = function(file){
     return new Promise(function(resolve, reject){
       var reader = new FileReader();
@@ -490,7 +539,9 @@
     });
   };
 
-  /* Scroll */
+  /* ============================================================
+     Scroll
+     ============================================================ */
   GN.scrollTo = function(sel, offset){
     var el = document.querySelector(sel);
     if (!el) return;
@@ -500,4 +551,4 @@
 
   console.log('[Gold Nile] utils.js loaded');
 
-})(); 
+})();
