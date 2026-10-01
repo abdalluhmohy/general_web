@@ -35,10 +35,18 @@
   /* ============================================================
      Save data back to dashboard_state (owner + admin only)
      ============================================================ */
-  GN.savePublicData = function(data){
+  GN.savePublicData = function(data, opts){
+    opts = opts || {};
     if (!GN.supa) return Promise.resolve(false);
-    if (!GN.session.isOwner) return Promise.resolve(false);
-    if (!GN.session.isAdmin) return Promise.resolve(false);
+
+    /* مسار خاص لتعليم الإشعارات كمقروءة (يُسمح للقرّاء) */
+    if (opts.notifOnly){
+      if (!GN.session.isLogged) return Promise.resolve(false);
+    } else {
+      /* المسار العادي: المالك + الأدمن فقط */
+      if (!GN.session.isOwner) return Promise.resolve(false);
+      if (!GN.session.isAdmin) return Promise.resolve(false);
+    }
 
     return GN.supa
       .from('dashboard_state')
@@ -51,7 +59,7 @@
         if (res.error) { console.error('[public] save:', res.error); return false; }
         return true;
       });
-  };
+};
 
   /* ============================================================
      Merge with defaults

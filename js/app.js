@@ -230,6 +230,8 @@ GN.showDashboard = function(){
     if (pub && !pub.hidden && GN.publicData) {
       GN.renderPublicPage(GN.publicData);
     }
+        /* Update crumb date */
+    if (typeof GN.renderCrumbDate === 'function') GN.renderCrumbDate();
   };
 
   /* ============================================================
