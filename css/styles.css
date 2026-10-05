@@ -6112,3 +6112,353 @@ body.drawer-open{
   user-select:none;
   cursor:pointer;
 }
+
+
+/* ============================================================
+   Locations Tree
+   ============================================================ */
+.loc-tree{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+.loc-state{
+  background:var(--paper);
+  border:1px solid var(--line-2);
+  border-radius:14px;
+  overflow:hidden;
+  transition:.2s;
+}
+.loc-state:hover{ border-color:rgba(197,155,61,.35); }
+
+.loc-state-head{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:12px 14px;
+  cursor:pointer;
+  user-select:none;
+  transition:.15s;
+}
+.loc-state-head:hover{ background:var(--paper-2); }
+
+.loc-toggle{
+  width:26px;
+  height:26px;
+  border-radius:8px;
+  background:var(--bg-alt);
+  border:1px solid var(--line);
+  display:grid;
+  place-items:center;
+  color:var(--ink-2);
+  cursor:pointer;
+  flex:none;
+  transition:.2s;
+  padding:0;
+}
+.loc-toggle svg{
+  width:14px;
+  height:14px;
+  transition:transform .25s;
+}
+.loc-toggle.rotated svg{ transform:rotate(90deg); }
+.loc-toggle:hover{ background:var(--nile-l); color:var(--nile); border-color:var(--nile); }
+.loc-toggle.sm{ width:22px; height:22px; border-radius:6px; }
+.loc-toggle.sm svg{ width:12px; height:12px; }
+
+.loc-state-info{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex:1;
+  min-width:0;
+}
+.loc-ic{
+  width:34px;
+  height:34px;
+  border-radius:10px;
+  background:linear-gradient(145deg,#F5EBD1,#E5D5A8);
+  color:var(--gold-d);
+  display:grid;
+  place-items:center;
+  flex:none;
+}
+.loc-ic svg{ width:18px; height:18px; }
+.loc-name{
+  font-family:'Cairo',sans-serif;
+  font-size:14.5px;
+  font-weight:800;
+  color:var(--ink);
+}
+.loc-meta{
+  font-size:11.5px;
+  color:var(--ink-3);
+  font-weight:600;
+}
+
+.loc-actions{
+  display:flex;
+  gap:4px;
+  flex:none;
+}
+.loc-actions.sm .icon-act.sm{
+  width:26px;
+  height:26px;
+  border-radius:7px;
+}
+.loc-actions.sm .icon-act.sm svg{ width:12px; height:12px; }
+
+.loc-body{
+  max-height:0;
+  overflow:hidden;
+  transition:max-height .35s cubic-bezier(.2,.8,.2,1);
+  border-top:0;
+}
+.loc-body.open{
+  max-height:5000px;
+  border-top:1px solid var(--line-2);
+  background:var(--paper-2);
+  padding:8px;
+}
+
+.loc-empty-sub{
+  padding:14px;
+  text-align:center;
+  color:var(--ink-3);
+  font-size:12.5px;
+}
+
+.loc-city{
+  background:var(--paper);
+  border:1px solid var(--line-2);
+  border-radius:10px;
+  margin-bottom:6px;
+  overflow:hidden;
+}
+.loc-city:last-child{ margin-bottom:0; }
+
+.loc-city-head{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:8px 12px;
+}
+.loc-city-name{
+  font-family:'Cairo',sans-serif;
+  font-size:13px;
+  font-weight:700;
+  color:var(--ink);
+  flex:1;
+  min-width:0;
+}
+.loc-badge{
+  font-size:10.5px;
+  font-weight:800;
+  padding:2px 8px;
+  border-radius:10px;
+  background:var(--nile-l);
+  color:var(--nile);
+}
+
+.loc-body-inner{
+  max-height:0;
+  overflow:hidden;
+  transition:max-height .3s cubic-bezier(.2,.8,.2,1);
+}
+.loc-body-inner.open{
+  max-height:3000px;
+  border-top:1px solid var(--line-2);
+  background:var(--bg-alt);
+  padding:6px;
+}
+
+.loc-places{
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+}
+
+.loc-place{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:6px 10px;
+  border-radius:8px;
+  transition:.15s;
+}
+.loc-place:hover{ background:var(--paper); }
+
+.loc-place-dot{
+  width:6px;
+  height:6px;
+  border-radius:50%;
+  background:var(--gold);
+  flex:none;
+}
+.loc-place-name{
+  font-size:12.5px;
+  color:var(--ink-2);
+  font-weight:600;
+  flex:1;
+  min-width:0;
+}
+
+@media(max-width:520px){
+  .loc-state-head{ padding:10px 12px; gap:8px; }
+  .loc-ic{ width:30px; height:30px; }
+  .loc-ic svg{ width:16px; height:16px; }
+  .loc-name{ font-size:13.5px; }
+  .loc-city-head{ padding:7px 10px; }
+  .loc-place{ padding:5px 8px; }
+}
+
+
+/* ============================================================
+   Expense Categories Tree
+   ============================================================ */
+.exp-cat-node{
+  background:var(--paper);
+  border:1px solid var(--line-2);
+  border-radius:12px;
+  margin-bottom:8px;
+  overflow:hidden;
+}
+.exp-cat-head{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:10px 12px;
+  background:var(--paper-2);
+}
+.exp-cat-ic{
+  width:30px;
+  height:30px;
+  border-radius:9px;
+  background:linear-gradient(145deg,#F5EBD1,#E5D5A8);
+  color:var(--gold-d);
+  display:grid;
+  place-items:center;
+  flex:none;
+}
+.exp-cat-ic svg{ width:16px; height:16px; }
+.exp-cat-name{
+  flex:1;
+  min-width:0;
+  font-family:'Cairo',sans-serif;
+  font-size:13.5px;
+  font-weight:800;
+  color:var(--ink);
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.exp-cat-name.sm{
+  font-size:12.5px;
+  font-weight:600;
+  color:var(--ink-2);
+}
+.exp-cat-subs{
+  padding:6px 10px 8px;
+}
+.exp-cat-sub{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:6px 8px;
+  border-radius:8px;
+  transition:.15s;
+}
+.exp-cat-sub:hover{ background:var(--bg-alt); }
+.exp-cat-dot{
+  width:6px;
+  height:6px;
+  border-radius:50%;
+  background:var(--gold);
+  flex:none;
+}
+.exp-cat-sub .exp-cat-name.sm{ flex:1; }
+.exp-cat-sub .icon-act.sm,
+.exp-cat-head .icon-act.sm{
+  width:26px;
+  height:26px;
+  border-radius:7px;
+}
+
+
+/* ============================================================
+   Reports — Search bar
+   ============================================================ */
+.rep-search-bar{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:10px 14px;
+  background:var(--paper);
+  border:1px solid var(--line-2);
+  border-radius:14px;
+  margin-bottom:14px;
+  position:relative;
+}
+.rep-search-ic{
+  width:20px;
+  height:20px;
+  color:var(--ink-3);
+  flex:none;
+  display:grid;
+  place-items:center;
+}
+.rep-search-ic svg{ width:18px; height:18px; }
+.rep-search-bar input{
+  flex:1;
+  border:0;
+  outline:none;
+  background:transparent;
+  font-family:'Cairo',sans-serif;
+  font-size:14px;
+  color:var(--ink);
+  min-width:0;
+}
+.rep-search-bar input::placeholder{ color:var(--ink-4); }
+.rep-search-count{
+  font-size:12px;
+  font-weight:700;
+  padding:2px 10px;
+  border-radius:12px;
+  white-space:nowrap;
+  transition:.15s;
+}
+.rep-search-count.has-results{
+  background:var(--ok-l);
+  color:var(--ok);
+}
+.rep-search-count.no-results{
+  background:var(--bad-l);
+  color:var(--bad);
+}
+.rep-search-clear{
+  width:26px;
+  height:26px;
+  border-radius:8px;
+  display:grid;
+  place-items:center;
+  background:transparent;
+  border:1px solid var(--line);
+  color:var(--ink-3);
+  cursor:pointer;
+  transition:.15s;
+  padding:0;
+  flex:none;
+}
+.rep-search-clear:hover{
+  background:var(--bad-l);
+  color:var(--bad);
+  border-color:var(--bad);
+}
+.rep-search-clear svg{ width:12px; height:12px; }
+
+@media(max-width:600px){
+  .rep-search-bar{ padding:8px 12px; border-radius:12px; }
+  .rep-search-bar input{ font-size:13px; }
+  .rep-search-count{ font-size:11px; padding:2px 8px; }
+}

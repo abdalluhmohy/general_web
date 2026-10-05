@@ -22,13 +22,23 @@ if (!GN.bindSection) GN.bindSection = {};
 GN.navGroups = [
   { title: 'groupMain', items: [
     { key:'home',        icon:'home',  label:'navHome' },
+    { key:'reports',     icon:'chart', label:'navReports' },
     { key:'suggestions', icon:'vote',  label:'navSuggestions' }
   ]},
   { title: 'groupFinance', items: [
     { key:'finance',  icon:'dollar', label:'navFinance' },
     { key:'banking',  icon:'bank',   label:'navBanking' },
-    { key:'gold',     icon:'gold',   label:'navGold' },
     { key:'payables', icon:'wallet', label:'navPayables' }
+  ]},
+  { title: 'groupGold', items: [
+    { key:'cycles',    icon:'gold',  label:'navCycles' },
+    { key:'inventory', icon:'box',   label:'navInventory' },
+    { key:'agents',    icon:'users', label:'navAgents' },
+    { key:'locations', icon:'map',   label:'navLocations' }
+  ]},
+  { title: 'groupAdvanced', items: [
+    { key:'funds',    icon:'wallet', label:'navFunds' },
+    { key:'expenses', icon:'receipt', label:'navExpenses' }
   ]},
   { title: 'groupHR', items: [
     { key:'hr',    icon:'team',  label:'navHR' },
@@ -62,6 +72,10 @@ GN.navIcon = function(name){
     wallet: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><rect x="2" y="6" width="20" height="14" rx="3"/><path d="M2 10h20M16 14h2"/><path d="M6 6V5a2 2 0 0 1 2-2h10"/></svg>',
     vote:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M9 18h6M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.4 1 1.1 1 1.8V17h6v-.5c0-.7.4-1.4 1-1.8A7 7 0 0 0 12 2Z"/></svg>',
     chart:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M3 3v18h18"/><path d="m7 14 4-4 4 4 6-6"/></svg>',
+    box:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M21 8 12 3 3 8v8l9 5 9-5V8Z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v9"/></svg>',
+    users:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5"/><circle cx="17" cy="9" r="2.5"/><path d="M15 20c0-2 1-3.5 3-4 1.5-.4 3 .8 3 3"/></svg>',
+    map:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Z"/><path d="M9 4v14M15 6v14"/></svg>',
+    receipt: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M4 2v20l3-2 3 2 3-2 3 2 3-2V2l-3 2-3-2-3 2-3-2-3 2Z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>',
     cog:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>'
   };
   return icons[name] || icons.home;

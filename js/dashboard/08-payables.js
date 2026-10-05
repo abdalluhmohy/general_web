@@ -1,6 +1,7 @@
 /* ============================================================
    Gold Nile — Dashboard / Payables & Payments
    KPIs · Tabs · Table · Approve · Pay · Cancel · Delete
+   + Auto-create Expense from paid Payable (Hybrid approach)
    ============================================================ */
 (function(){
 'use strict';
@@ -208,7 +209,7 @@ GN.renderPayablesTable = function(arr){
 };
 
 /* ============================================================
-   Actions
+   Approve
    ============================================================ */
 GN.approvePayable = function(id){
   if (!GN.session.isOwner){ GN.toast(GN.t('readOnlyNotice'), 'bad'); return; }
@@ -265,6 +266,9 @@ GN.approvePayable = function(id){
   };
 };
 
+/* ============================================================
+   Cancel
+   ============================================================ */
 GN.cancelPayable = function(id){
   if (!GN.session.isOwner){ GN.toast(GN.t('readOnlyNotice'), 'bad'); return; }
   GN.confirm({
@@ -286,6 +290,9 @@ GN.cancelPayable = function(id){
   });
 };
 
+/* ============================================================
+   Delete
+   ============================================================ */
 GN.deletePayable = function(id){
   if (!GN.session.isOwner){ GN.toast(GN.t('readOnlyNotice'), 'bad'); return; }
   GN.confirm({
@@ -305,6 +312,10 @@ GN.deletePayable = function(id){
   });
 };
 
+/* ============================================================
+   Mark Payable Paid
+   + Auto-create linked Expense (Hybrid approach)
+   ============================================================ */
 GN.markPayablePaid = function(id){
   if (!GN.session.isOwner || !GN.session.isAdmin){ GN.toast(GN.t('readOnlyNotice'), 'bad'); return; }
 
@@ -369,15 +380,40 @@ GN.markPayablePaid = function(id){
       }).eq('id', id).then(function(r2){
         submitBtn.disabled = false;
         if (r2.error){ GN.toast(r2.error.message, 'bad'); return; }
+
         GN.applyBankChange(bankId, -amt, function(){
           GN.toast(GN.t('payPaid_msg'), 'ok');
+
           GN.notify.send({
             type:'edit', section:'payables', target:'payable', target_id: id,
             title: GN.t('payPaid'),
             body: GN.t('payPaid_msg') + ' — ' + transfer
           });
-          GN.closeModal('formModal');
-          GN.loadPayables();
+
+          /* ============================================
+             ربط تلقائي: إنشاء Expense من Payable
+             ============================================ */
+          GN._autoCreateExpenseFromPayable({
+            id: id,
+            code: p.code,
+            type: p.type,
+            beneficiary_name: p.beneficiary_name,
+            amount: p.amount,
+            amount_sdg: p.amount_sdg,
+            currency: p.currency,
+            payment_method: p.payment_method,
+            bank_id: bankId,
+            bank_name: bk ? bk.name : '',
+            invoice_url: invoice,
+            notes: p.notes,
+            paid_at: payDate ? (payDate + 'T00:00:00Z') : new Date().toISOString()
+          }).then(function(created){
+            if (created){
+              GN.toast('✓ تم تسجيل المصروف تلقائيًا', 'ok');
+            }
+            GN.closeModal('formModal');
+            GN.loadPayables();
+          });
         });
       });
     });
@@ -385,7 +421,92 @@ GN.markPayablePaid = function(id){
 };
 
 /* ============================================================
-   Payable Form
+   Auto-create Expense from paid Payable
+   ============================================================ */
+GN._autoCreateExpenseFromPayable = function(payable){
+  if (!payable || !payable.id) return Promise.resolve(false);
+
+  /* 1) تحقق من عدم الوجود مسبقًا (منع التكرار) */
+  return GN.supa.from('expenses')
+    .select('id')
+    .eq('source_payable_id', payable.id)
+    .maybeSingle()
+    .then(function(check){
+      if (check.data && check.data.id){
+        /* موجود بالفعل */
+        return false;
+      }
+
+      /* 2) اختر التصنيف المناسب */
+      return GN._findOrCreatePaidObligationCategory().then(function(catId){
+        if (!catId) return false;
+
+        var payload = {
+          category_id: catId,
+          expense_date: (payable.paid_at || new Date().toISOString()).slice(0, 10),
+          amount: Number(payable.amount_sdg || payable.amount || 0),
+          currency: payable.currency || 'SDG',
+          party_type: payable.type === 'agent' ? 'agent'
+                    : payable.type === 'salary' ? 'employee'
+                    : payable.type === 'tax' ? 'general'
+                    : 'general',
+          party_id: null,
+          party_name: payable.beneficiary_name || '',
+          payment_method: payable.payment_method || 'bank',
+          bank_id: payable.bank_id || '',
+          description: '[استحقاق ' + (payable.code || '') + '] ' + (payable.notes || ''),
+          attachment_url: payable.invoice_url || '',
+          status: 'paid',
+          source_payable_id: payable.id,
+          created_by: GN.session.user ? GN.session.user.id : null
+        };
+
+        return GN.supa.from('expenses').insert(payload).then(function(res){
+          if (res.error){
+            console.error('[auto expense]', res.error);
+            return false;
+          }
+          return true;
+        });
+      });
+    });
+};
+
+/* ============================================================
+   Find or create "التزامات مدفوعة" category
+   ============================================================ */
+GN._findOrCreatePaidObligationCategory = function(){
+  /* ابحث في الذاكرة أولًا */
+  var cached = (GN._expCatsCache || []).filter(function(c){
+    return c.name_ar === 'التزامات مدفوعة';
+  })[0];
+  if (cached) return Promise.resolve(cached.id);
+
+  /* ابحث في DB */
+  return GN.supa.from('expense_categories')
+    .select('id,name_ar')
+    .eq('name_ar', 'التزامات مدفوعة')
+    .maybeSingle()
+    .then(function(res){
+      if (res.data && res.data.id){
+        return res.data.id;
+      }
+      /* أنشئها */
+      return GN.supa.from('expense_categories')
+        .insert({ name_ar: 'التزامات مدفوعة', name_en: 'Paid Obligations', display_order: 5 })
+        .select()
+        .then(function(r2){
+          if (r2.error){
+            console.error('[auto cat]', r2.error);
+            return null;
+          }
+          return r2.data && r2.data[0] ? r2.data[0].id : null;
+        });
+    });
+};
+
+/* ============================================================
+   Payable Form (Add / Edit)
    ============================================================ */
 GN.openPayableForm = function(item){
   if (!GN.session.isOwner || !GN.session.isAdmin){ GN.toast(GN.t('readOnlyNotice'), 'bad'); return; }
