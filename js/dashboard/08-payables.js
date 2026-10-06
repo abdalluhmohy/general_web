@@ -1,16 +1,11 @@
 /* ============================================================
    Gold Nile — Dashboard / Payables & Payments
-   KPIs · Tabs · Table · Approve · Pay · Cancel · Delete
-   + Auto-create Expense from paid Payable (Hybrid approach)
    ============================================================ */
 (function(){
 'use strict';
 
 var GN = window.GN = window.GN || {};
 
-/* ============================================================
-   Payables Section
-   ============================================================ */
 GN.payablesFilter = { status: 'all' };
 
 GN.sections.payables = function(){
@@ -208,9 +203,6 @@ GN.renderPayablesTable = function(arr){
   });
 };
 
-/* ============================================================
-   Approve
-   ============================================================ */
 GN.approvePayable = function(id){
   if (!GN.session.isOwner){ GN.toast(GN.t('readOnlyNotice'), 'bad'); return; }
 
@@ -266,9 +258,6 @@ GN.approvePayable = function(id){
   };
 };
 
-/* ============================================================
-   Cancel
-   ============================================================ */
 GN.cancelPayable = function(id){
   if (!GN.session.isOwner){ GN.toast(GN.t('readOnlyNotice'), 'bad'); return; }
   GN.confirm({
@@ -290,9 +279,6 @@ GN.cancelPayable = function(id){
   });
 };
 
-/* ============================================================
-   Delete
-   ============================================================ */
 GN.deletePayable = function(id){
   if (!GN.session.isOwner){ GN.toast(GN.t('readOnlyNotice'), 'bad'); return; }
   GN.confirm({
@@ -312,10 +298,6 @@ GN.deletePayable = function(id){
   });
 };
 
-/* ============================================================
-   Mark Payable Paid
-   + Auto-create linked Expense (Hybrid approach)
-   ============================================================ */
 GN.markPayablePaid = function(id){
   if (!GN.session.isOwner || !GN.session.isAdmin){ GN.toast(GN.t('readOnlyNotice'), 'bad'); return; }
 
@@ -362,8 +344,10 @@ GN.markPayablePaid = function(id){
     if (!bankId){ GN.toast(GN.t('payBankRequired'), 'bad'); return; }
 
     submitBtn.disabled = true;
+
     GN.supa.from('payment_orders').select('*').eq('id', id).single().then(function(res){
       if (res.error){ submitBtn.disabled = false; GN.toast(res.error.message, 'bad'); return; }
+
       var p = res.data;
       var amt = Number(p.amount_sdg || p.amount || 0);
       var bk = banks.filter(function(x){ return x.id === bankId; })[0];
@@ -382,37 +366,48 @@ GN.markPayablePaid = function(id){
         if (r2.error){ GN.toast(r2.error.message, 'bad'); return; }
 
         GN.applyBankChange(bankId, -amt, function(){
-          GN.toast(GN.t('payPaid_msg'), 'ok');
-
-          GN.notify.send({
-            type:'edit', section:'payables', target:'payable', target_id: id,
-            title: GN.t('payPaid'),
-            body: GN.t('payPaid_msg') + ' — ' + transfer
-          });
-
-          /* ============================================
-             ربط تلقائي: إنشاء Expense من Payable
-             ============================================ */
-          GN._autoCreateExpenseFromPayable({
-            id: id,
-            code: p.code,
-            type: p.type,
-            beneficiary_name: p.beneficiary_name,
-            amount: p.amount,
-            amount_sdg: p.amount_sdg,
-            currency: p.currency,
-            payment_method: p.payment_method,
+          GN.addBankTransfer({
             bank_id: bankId,
-            bank_name: bk ? bk.name : '',
-            invoice_url: invoice,
-            notes: p.notes,
-            paid_at: payDate ? (payDate + 'T00:00:00Z') : new Date().toISOString()
-          }).then(function(created){
-            if (created){
-              GN.toast('✓ تم تسجيل المصروف تلقائيًا', 'ok');
-            }
-            GN.closeModal('formModal');
-            GN.loadPayables();
+            type: 'out',
+            amount: amt,
+            currency: p.currency || 'SDG',
+            party: p.beneficiary_name || '',
+            invoice: transfer,
+            attachment: invoice,
+            notes: 'دفع استحقاق ' + (p.code || ''),
+            source: 'payable',
+            source_id: id,
+            date: payDate || GN.today()
+          }).then(function(){
+            GN.toast(GN.t('payPaid_msg'), 'ok');
+
+            GN.notify.send({
+              type:'edit', section:'payables', target:'payable', target_id: id,
+              title: GN.t('payPaid'),
+              body: GN.t('payPaid_msg') + ' — ' + transfer
+            });
+
+            GN._autoCreateExpenseFromPayable({
+              id: id,
+              code: p.code,
+              type: p.type,
+              beneficiary_name: p.beneficiary_name,
+              amount: p.amount,
+              amount_sdg: p.amount_sdg,
+              currency: p.currency,
+              payment_method: p.payment_method,
+              bank_id: bankId,
+              bank_name: bk ? bk.name : '',
+              invoice_url: invoice,
+              notes: p.notes,
+              paid_at: payDate ? (payDate + 'T00:00:00Z') : new Date().toISOString()
+            }).then(function(created){
+              if (created){
+                GN.toast('✓ تم تسجيل المصروف تلقائيًا', 'ok');
+              }
+              GN.closeModal('formModal');
+              GN.loadPayables();
+            });
           });
         });
       });
@@ -420,24 +415,18 @@ GN.markPayablePaid = function(id){
   };
 };
 
-/* ============================================================
-   Auto-create Expense from paid Payable
-   ============================================================ */
 GN._autoCreateExpenseFromPayable = function(payable){
   if (!payable || !payable.id) return Promise.resolve(false);
 
-  /* 1) تحقق من عدم الوجود مسبقًا (منع التكرار) */
   return GN.supa.from('expenses')
     .select('id')
     .eq('source_payable_id', payable.id)
     .maybeSingle()
     .then(function(check){
       if (check.data && check.data.id){
-        /* موجود بالفعل */
         return false;
       }
 
-      /* 2) اختر التصنيف المناسب */
       return GN._findOrCreatePaidObligationCategory().then(function(catId){
         if (!catId) return false;
 
@@ -472,17 +461,12 @@ GN._autoCreateExpenseFromPayable = function(payable){
     });
 };
 
-/* ============================================================
-   Find or create "التزامات مدفوعة" category
-   ============================================================ */
 GN._findOrCreatePaidObligationCategory = function(){
-  /* ابحث في الذاكرة أولًا */
   var cached = (GN._expCatsCache || []).filter(function(c){
     return c.name_ar === 'التزامات مدفوعة';
   })[0];
   if (cached) return Promise.resolve(cached.id);
 
-  /* ابحث في DB */
   return GN.supa.from('expense_categories')
     .select('id,name_ar')
     .eq('name_ar', 'التزامات مدفوعة')
@@ -491,7 +475,6 @@ GN._findOrCreatePaidObligationCategory = function(){
       if (res.data && res.data.id){
         return res.data.id;
       }
-      /* أنشئها */
       return GN.supa.from('expense_categories')
         .insert({ name_ar: 'التزامات مدفوعة', name_en: 'Paid Obligations', display_order: 5 })
         .select()
@@ -505,9 +488,6 @@ GN._findOrCreatePaidObligationCategory = function(){
     });
 };
 
-/* ============================================================
-   Payable Form (Add / Edit)
-   ============================================================ */
 GN.openPayableForm = function(item){
   if (!GN.session.isOwner || !GN.session.isAdmin){ GN.toast(GN.t('readOnlyNotice'), 'bad'); return; }
   var isEdit = !!item;
@@ -629,9 +609,6 @@ GN.openPayableForm = function(item){
   };
 };
 
-/* ============================================================
-   Bind Section
-   ============================================================ */
 GN.bindSection.payables = function(){
   GN.bindAction('pay-add', function(){
     if (!GN.session.isOwner || !GN.session.isAdmin){ GN.toast(GN.t('readOnlyNotice'), 'bad'); return; }
@@ -639,9 +616,6 @@ GN.bindSection.payables = function(){
   });
 };
 
-/* ============================================================
-   Agent Payable auto-creation (called from gold forms)
-   ============================================================ */
 GN.createAgentPayable = function(source, sourceType){
   var agentId = source.agent_id;
   if (!agentId) return Promise.resolve(null);

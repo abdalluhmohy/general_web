@@ -218,77 +218,84 @@
      Board Members
      ============================================================ */
   GN.renderBoard = function(list){
-    if (!Array.isArray(list)) list = [];
-    var grid = document.getElementById('boardGrid');
-    if (!grid) return;
-    grid.className = 'board-grid-v2';
+  if (!Array.isArray(list)) list = [];
+  var grid = document.getElementById('boardGrid');
+  if (!grid) return;
+  grid.className = 'board-grid-v3';
 
-    /* Add toolbar (owner only) */
-    var toolbar = document.getElementById('boardToolbar');
-    if (GN.session.isOwner && !toolbar){
-      toolbar = document.createElement('div');
-      toolbar.id = 'boardToolbar';
-      toolbar.className = 'board-toolbar';
-      toolbar.innerHTML = '<button class="btn btn-pri btn-sm" data-act="board-manage">' +
-        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:14px;height:14px"><path d="M12 5v14M5 12h14"/></svg> ' +
-        GN.esc(GN.t('boardManage')) + '</button>';
-      grid.parentNode.insertBefore(toolbar, grid);
-    }
+  /* Owner toolbar */
+  var toolbar = document.getElementById('boardToolbar');
+  if (GN.session.isOwner && !toolbar){
+    toolbar = document.createElement('div');
+    toolbar.id = 'boardToolbar';
+    toolbar.className = 'board-toolbar';
+    toolbar.innerHTML = '<button class="btn btn-pri btn-sm" data-act="board-manage">' +
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:14px;height:14px"><path d="M12 5v14M5 12h14"/></svg> ' +
+      GN.esc(GN.t('boardManage')) + '</button>';
+    grid.parentNode.insertBefore(toolbar, grid);
+  }
 
-    if (!list.length){
-      grid.innerHTML = '<div class="board-empty">' +
-        '<h4>' + GN.esc(GN.t('boardEmpty')) + '</h4></div>';
-      GN.bindBoardAdmin();
-      return;
-    }
-
-    /* Sort by order (asc), then by flag priority */
-    var flagPriority = { sd: 0, om: 1, eg: 2 };
-    var sorted = list.slice().sort(function(a, b){
-      var ao = (a.order != null && a.order !== '') ? Number(a.order) : 999;
-      var bo = (b.order != null && b.order !== '') ? Number(b.order) : 999;
-      if (ao !== bo) return ao - bo;
-      var ap = flagPriority[a.flag] != null ? flagPriority[a.flag] : 99;
-      var bp = flagPriority[b.flag] != null ? flagPriority[b.flag] : 99;
-      return ap - bp;
-    });
-
-    grid.innerHTML = sorted.map(function(item){
-      var realIdx = list.indexOf(item);
-      var flag = item.flag || 'sd';
-      var photo = item.photo
-        ? '<img src="' + GN.escAttr(item.photo) + '" alt="" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'grid\'"><div class="fallback" style="display:none">' + GN.esc(GN.initial(item.name || '?')) + '</div>'
-        : '<div class="fallback">' + GN.esc(GN.initial(item.name || '?')) + '</div>';
-
-      var flagSpans = '';
-      var flagCount = flag === 'eg' ? 3 : 4;
-      for (var k = 0; k < flagCount; k++) flagSpans += '<span></span>';
-
-      var adminBtns = GN.session.isOwner
-        ? '<div class="bm-admin">' +
-            '<button class="edit" data-bm-edit="' + realIdx + '" title="' + GN.escAttr(GN.t('edit')) + '">' +
-              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>' +
-            '</button>' +
-            '<button class="del" data-bm-del="' + realIdx + '" title="' + GN.escAttr(GN.t('delete')) + '">' +
-              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M8 6V4h8v2M6 6v14a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V6"/></svg>' +
-            '</button>' +
-          '</div>'
-        : '';
-
-      return '<div class="bm-card" data-board-idx="' + realIdx + '">' +
-        adminBtns +
-        '<div class="bm-photo">' + photo + '<div class="flag-corner flag-' + flag + '">' + flagSpans + '</div></div>' +
-        '<div class="bm-info">' +
-          (item.role ? '<div class="bm-role" data-edit="board.' + realIdx + '.role">' + GN.esc(item.role) + '</div>' : '') +
-          '<h3 class="bm-name" data-edit="board.' + realIdx + '.name">' + GN.esc(item.name || '') + '</h3>' +
-          (item.subtitle ? '<div class="bm-subtitle" data-edit="board.' + realIdx + '.subtitle">' + GN.esc(item.subtitle) + '</div>' : '') +
-          (item.quote ? '<div class="bm-quote"><span data-edit="board.' + realIdx + '.quote">' + GN.esc(item.quote) + '</span></div>' : '') +
-        '</div>' +
-      '</div>';
-    }).join('');
-
+  if (!list.length){
+    grid.innerHTML = '<div class="board-empty">' +
+      '<h4>' + GN.esc(GN.t('boardEmpty')) + '</h4></div>';
     GN.bindBoardAdmin();
-  };
+    return;
+  }
+
+  /* Sort by order, then flag priority */
+  var flagPriority = { sd: 0, om: 1, eg: 2 };
+  var sorted = list.slice().sort(function(a, b){
+    var ao = (a.order != null && a.order !== '') ? Number(a.order) : 999;
+    var bo = (b.order != null && b.order !== '') ? Number(b.order) : 999;
+    if (ao !== bo) return ao - bo;
+    var ap = flagPriority[a.flag] != null ? flagPriority[a.flag] : 99;
+    var bp = flagPriority[b.flag] != null ? flagPriority[b.flag] : 99;
+    return ap - bp;
+  });
+
+  grid.innerHTML = sorted.map(function(item){
+    var realIdx = list.indexOf(item);
+    var flag = item.flag || 'sd';
+    var flagCount = flag === 'eg' ? 3 : 4;
+    var flagSpans = '';
+    for (var k = 0; k < flagCount; k++) flagSpans += '<span></span>';
+
+    var photo = item.photo
+      ? '<img src="' + GN.escAttr(item.photo) + '" alt="" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'grid\'">' +
+        '<div class="fallback" style="display:none">' + GN.esc(GN.initial(item.name || '?')) + '</div>'
+      : '<div class="fallback">' + GN.esc(GN.initial(item.name || '?')) + '</div>';
+
+    var adminBtns = GN.session.isOwner
+      ? '<div class="bm-v3-admin">' +
+          '<button class="edit" data-bm-edit="' + realIdx + '" title="' + GN.escAttr(GN.t('edit')) + '">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>' +
+          '</button>' +
+          '<button class="del" data-bm-del="' + realIdx + '" title="' + GN.escAttr(GN.t('delete')) + '">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M8 6V4h8v2M6 6v14a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V6"/></svg>' +
+          '</button>' +
+        '</div>'
+      : '';
+
+    return '<div class="bm-v3" data-board-idx="' + realIdx + '">' +
+      adminBtns +
+      '<div class="bm-v3-photo">' +
+        '<div class="bm-v3-flag flag-' + flag + '">' + flagSpans + '</div>' +
+        '<div class="bm-v3-photo-inner">' + photo + '</div>' +
+      '</div>' +
+      '<div class="bm-v3-info">' +
+        (item.role ? '<div class="bm-v3-role" data-edit="board.' + realIdx + '.role">' + GN.esc(item.role) + '</div>' : '') +
+        '<h3 class="bm-v3-name" data-edit="board.' + realIdx + '.name">' + GN.esc(item.name || '') + '</h3>' +
+        (item.subtitle ? '<div class="bm-v3-subtitle" data-edit="board.' + realIdx + '.subtitle">' + GN.esc(item.subtitle) + '</div>' : '') +
+        '<div class="bm-v3-divider"></div>' +
+        (item.quote
+          ? '<div class="bm-v3-quote"><span class="bm-v3-quote-text" data-edit="board.' + realIdx + '.quote">' + GN.esc(item.quote) + '</span></div>'
+          : '<div class="bm-v3-quote" style="opacity:.35"><span class="bm-v3-quote-text">—</span></div>') +
+      '</div>' +
+    '</div>';
+  }).join('');
+
+  GN.bindBoardAdmin();
+};
 
   GN.bindBoardAdmin = function(){
     /* Admin manage button */

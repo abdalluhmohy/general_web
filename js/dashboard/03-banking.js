@@ -1,6 +1,7 @@
 /* ============================================================
    Gold Nile — Dashboard / Banking
    Banks · Transfers · Per-currency KPIs · Bank Details
+   + Colored tags + Unified Logger + Feed Pool button
    ============================================================ */
 (function(){
 'use strict';
@@ -11,14 +12,114 @@ var ICO_EDIT = GN.ICO_EDIT;
 var ICO_DEL  = GN.ICO_DEL;
 
 /* ============================================================
-   Banking Section — Per-currency KPIs
+   Bank color palette
+   ============================================================ */
+var BANK_COLORS = [
+  { bg:'#F5EBD1', fg:'#8C6A1F' },
+  { bg:'#E1EFED', fg:'#1E6B67' },
+  { bg:'#E5EEF7', fg:'#2C6398' },
+  { bg:'#F0E5F5', fg:'#7A4B9E' },
+  { bg:'#F6E1DD', fg:'#B33A2A' },
+  { bg:'#DDF3E3', fg:'#2B7A55' },
+  { bg:'#FBEED2', fg:'#B26A00' },
+  { bg:'#E8E8F5', fg:'#4A4A9E' }
+];
+
+GN._bankColor = function(bankId){
+  if (!bankId) return BANK_COLORS[0];
+  var hash = 0;
+  var s = String(bankId);
+  for (var i = 0; i < s.length; i++){
+    hash = ((hash << 5) - hash) + s.charCodeAt(i);
+    hash = hash & hash;
+  }
+  return BANK_COLORS[Math.abs(hash) % BANK_COLORS.length];
+};
+
+GN._bankTag = function(bankId, bankName){
+  if (!bankName) return '<span style="color:var(--ink-3)">—</span>';
+  var c = GN._bankColor(bankId);
+  return '<span style="display:inline-block;padding:3px 10px;border-radius:12px;background:' + c.bg + ';color:' + c.fg + ';font-size:11.5px;font-weight:800;white-space:nowrap">' + GN.esc(bankName) + '</span>';
+};
+
+/* ============================================================
+   Unified Bank Transfer Logger
+   ============================================================ */
+GN.addBankTransfer = function(opts){
+  opts = opts || {};
+  if (!opts.bank_id) return Promise.resolve(false);
+
+  var arr = GN.dh.list('transfers');
+  var banks = GN.dh.list('banks');
+  var bank = banks.filter(function(b){ return b.id === opts.bank_id; })[0];
+  if (!bank) return Promise.resolve(false);
+
+  var amount = Number(opts.amount || 0);
+  if (amount <= 0) return Promise.resolve(false);
+
+  var type = opts.type || 'out';
+  var record = {
+    id: GN.uid(),
+    type: type,
+    date: opts.date || GN.today(),
+    bank_id: bank.id,
+    bank_name: bank.name,
+    amount: amount,
+    currency: opts.currency || bank.currency || 'SDG',
+    party: opts.party || '',
+    invoice: opts.invoice || '',
+    attachment: opts.attachment || '',
+    notes: opts.notes || '',
+    source: opts.source || 'manual',
+    source_id: opts.source_id || '',
+    created_at: GN.now()
+  };
+
+  arr.push(record);
+  bank.balance = Number(bank.balance || 0) + (type === 'in' ? amount : -amount);
+
+  return GN.savePublicData(GN.dash.data).then(function(ok){
+    return ok ? record : false;
+  });
+};
+
+GN.removeBankTransfer = function(source, sourceId){
+  if (!source || !sourceId) return Promise.resolve(false);
+  var arr = GN.dh.list('transfers');
+  var banks = GN.dh.list('banks');
+  var removed = false;
+
+  for (var i = arr.length - 1; i >= 0; i--){
+    var t = arr[i];
+    if (t.source === source && String(t.source_id) === String(sourceId)){
+      if (t.bank_id){
+        var bank = banks.filter(function(b){ return b.id === t.bank_id; })[0];
+        if (bank){
+          var amt = Number(t.amount || 0);
+          bank.balance = Number(bank.balance || 0) - (t.type === 'in' ? amt : -amt);
+        }
+      }
+      arr.splice(i, 1);
+      removed = true;
+    }
+  }
+
+  if (removed){
+    return GN.savePublicData(GN.dash.data).then(function(){ return true; });
+  }
+  return Promise.resolve(false);
+};
+
+/* ============================================================
+   Banking Section
    ============================================================ */
 GN.sections.banking = function(){
   var d = GN.dash.data || {};
   var banks = (d.dashboard && d.dashboard.banks) || [];
   var transfers = (d.dashboard && d.dashboard.transfers) || [];
+  var pools = GN.dh.list('fund_pools');
 
-  /* Group by currency */
+  /* Per-currency grouping */
   var currencies = {};
   banks.forEach(function(b){
     var c = b.currency || 'SDG';
@@ -37,7 +138,6 @@ GN.sections.banking = function(){
 
   var currKeys = Object.keys(currencies).sort();
 
-  /* Flags map */
   var flags = (window.GN_CONST && window.GN_CONST.CURRENCIES) || [];
   function flagOf(code){
     var found = flags.filter(function(x){ return x.code === code; })[0];
@@ -94,6 +194,24 @@ GN.sections.banking = function(){
         }
       });
 
+      /* Find pools linked to this bank */
+      var linkedPools = pools.filter(function(p){
+        return p.type === 'bank_account' && p.bank_id === b.id;
+      });
+
+      var poolsHtml = '';
+      if (linkedPools.length){
+        poolsHtml = '<div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--line);font-size:11.5px">' +
+          '<div style="font-weight:800;color:var(--ink-3);margin-bottom:6px">الأوعية المرتبطة:</div>' +
+          linkedPools.map(function(p){
+            return '<div style="display:flex;justify-content:space-between;padding:3px 0">' +
+              '<span style="color:var(--ink-2);font-weight:600">' + GN.esc(p.name_ar) + '</span>' +
+              '<bdi style="font-weight:800;color:var(--gold-d)">' + GN.formatNum(p.balance || 0) + ' ' + GN.esc(p.currency) + '</bdi>' +
+            '</div>';
+          }).join('') +
+        '</div>';
+      }
+
       html += '<div class="card" style="margin:0" data-notif-id="' + GN.escAttr(b.id || '') + '">' +
         '<div class="card-head">' +
         '<h3 class="bank-name-link" data-bank-detail="' + i + '" style="font-size:15px">' + GN.esc(b.name || '-') + '</h3>' +
@@ -120,9 +238,11 @@ GN.sections.banking = function(){
             '<div style="font-size:10.5px;color:var(--bad);font-weight:700">' + GN.esc(GN.t('outgoingTotal')) + '</div>' +
             '<div style="font-weight:700;color:var(--bad)">' + GN.formatNum(bankOut) + '</div></div>' +
         '</div>' +
-        '<div style="display:flex;gap:8px;margin-top:12px">' +
-          '<button class="btn btn-pri btn-sm" style="flex:1" data-act="add-in" data-bank-idx="' + i + '">' + GN.esc(GN.t('addIncoming')) + '</button>' +
-          '<button class="btn btn-danger btn-sm" style="flex:1" data-act="add-out" data-bank-idx="' + i + '">' + GN.esc(GN.t('addOutgoing')) + '</button>' +
+        poolsHtml +
+        '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:12px">' +
+          '<button class="btn btn-pri btn-sm" data-act="add-in" data-bank-idx="' + i + '" style="font-size:11.5px">' + GN.esc(GN.t('addIncoming')) + '</button>' +
+          '<button class="btn btn-danger btn-sm" data-act="add-out" data-bank-idx="' + i + '" style="font-size:11.5px">' + GN.esc(GN.t('addOutgoing')) + '</button>' +
+          '<button class="btn btn-gold btn-sm" data-act="feed-pool" data-bank-idx="' + i + '" style="font-size:11.5px" title="تغذية وعاء">تغذية</button>' +
         '</div></div>';
     });
     html += '</div>';
@@ -136,25 +256,64 @@ GN.sections.banking = function(){
   if (!transfers.length){
     html += '<div class="empty"><div class="ic">' + GN.navIcon('bank') + '</div><h4>' + GN.esc(GN.t('noData')) + '</h4></div>';
   } else {
-    var sortedTr = transfers.slice().sort(function(a, b){ return (b.date || '').localeCompare(a.date || ''); });
+    var sortedTr = transfers.slice().sort(function(a, b){
+  /* الأحدث أولًا: قارن بـ created_at أولًا، ثم date، ثم id */
+    var aKey = (a.created_at || a.date || '') + '|' + (a.id || '');
+    var bKey = (b.created_at || b.date || '') + '|' + (b.id || '');
+    return bKey.localeCompare(aKey);
+});
+
+    var sourceLabels = {
+      payable:       'استحقاق',
+      gold_purchase: 'شراء ذهب',
+      gold_sale:     'بيع ذهب',
+      expense:       'مصروف',
+      fund:          'وعاء',
+      feed_pool:     'تغذية وعاء',
+      manual:        'يدوي'
+    };
+
     html += '<div class="table-wrap"><table><thead><tr>' +
       '<th>' + GN.esc(GN.t('date')) + '</th>' +
+      '<th>' + GN.esc(GN.t('bankName')) + '</th>' +
       '<th>' + GN.esc(GN.t('transferType')) + '</th>' +
       '<th>' + GN.esc(GN.t('party')) + '</th>' +
       '<th>' + GN.esc(GN.t('amount')) + '</th>' +
       '<th>' + GN.esc(GN.t('invoiceNumber')) + '</th>' +
+      '<th>المصدر</th>' +
       '<th>' + GN.esc(GN.t('attachment')) + '</th><th></th></tr></thead><tbody>';
+
     sortedTr.forEach(function(t){
       var origIdx = transfers.indexOf(t);
+      var bankName = t.bank_name || '';
+      var bankId   = t.bank_id || '';
+      if (!bankName){
+        var bank = banks.filter(function(b){
+          return b.id === t.bank_id || b.name === t.bank;
+        })[0];
+        if (bank){
+          bankName = bank.name;
+          bankId = bank.id;
+        }
+      }
+
       var typeChip = t.type === 'in'
         ? '<span class="chip ok"><span class="dot"></span>' + GN.esc(GN.t('incoming')) + '</span>'
         : '<span class="chip b"><span class="dot"></span>' + GN.esc(GN.t('outgoing')) + '</span>';
-      html += '<tr data-notif-id="' + GN.escAttr(t.id || '') + '"><td>' + GN.esc(GN.formatDate(t.date)) + '</td>' +
+
+      var sourceBadge = (t.source && t.source !== 'manual')
+        ? '<span class="chip n" style="font-size:10.5px">' + GN.esc(sourceLabels[t.source] || t.source) + '</span>'
+        : '<span style="color:var(--ink-3);font-size:11px">يدوي</span>';
+
+      html += '<tr data-notif-id="' + GN.escAttr(t.id || '') + '">' +
+        '<td>' + GN.esc(GN.formatDate(t.date)) + '</td>' +
+        '<td>' + GN._bankTag(bankId, bankName) + '</td>' +
         '<td>' + typeChip + '</td>' +
         '<td>' + GN.esc(t.party || '-') + '</td>' +
-        '<td class="num" style="color:' + (t.type === 'in' ? 'var(--ok)' : 'var(--bad)') + '">' +
+        '<td class="num" style="color:' + (t.type === 'in' ? 'var(--ok)' : 'var(--bad)') + ';font-weight:800">' +
           (t.type === 'in' ? '+' : '-') + ' ' + GN.formatMoneyPlain(t.amount, t.currency || 'SDG') + '</td>' +
         '<td><bdi dir="ltr">' + GN.esc(t.invoice || '-') + '</bdi></td>' +
+        '<td>' + sourceBadge + '</td>' +
         '<td>' + (t.attachment ? '<a href="' + GN.escAttr(t.attachment) + '" target="_blank" rel="noopener" class="chip n">' + GN.esc(GN.t('view')) + '</a>' : '-') + '</td>' +
         '<td class="actions">' + GN.dh.sectionActions([
           { act:'edit-transfer', idx:origIdx, icon:ICO_EDIT, title:GN.t('edit') },
@@ -176,6 +335,7 @@ GN.bindSection.banking = function(){
   GN.bindAction('edit-transfer', function(btn){ GN.openTransferForm(+btn.getAttribute('data-idx')); });
   GN.bindAction('del-transfer',  function(btn){ GN.delTransfer(+btn.getAttribute('data-idx')); });
   GN.bindAction('export-transfers', function(){ GN.exportTransfersExcel(); });
+  GN.bindAction('feed-pool',     function(btn){ GN.openFeedPoolForm(+btn.getAttribute('data-bank-idx')); });
 
   GN.$$('[data-bank-detail]').forEach(function(el){
     el.addEventListener('click', function(e){
@@ -183,6 +343,151 @@ GN.bindSection.banking = function(){
       GN.openBankDetails(+el.getAttribute('data-bank-detail'));
     });
   });
+};
+
+/* ============================================================
+   Feed Pool Form — نقل مبلغ من بنك إلى وعاء
+   ============================================================ */
+GN.openFeedPoolForm = function(bankIdx){
+  if (!GN.session.isAdmin){ GN.toast(GN.t('readOnlyNotice'), 'bad'); return; }
+
+  var banks = GN.dh.list('banks');
+  var bank = banks[bankIdx];
+  if (!bank){ GN.toast('البنك غير موجود', 'bad'); return; }
+
+  var pools = GN.dh.list('fund_pools');
+  var eligible = pools.filter(function(p){ return p.is_active !== false; });
+
+  if (!eligible.length){
+    GN.toast('لا توجد أوعية مالية', 'bad');
+    return;
+  }
+
+  var poolOpts = eligible.map(function(p){
+    return '<option value="' + GN.escAttr(p.id) + '"' +
+      ' data-currency="' + GN.escAttr(p.currency) + '"' +
+      ' data-bank-id="' + GN.escAttr(p.bank_id || '') + '">' +
+      GN.esc(p.name_ar) + ' (' + GN.esc(p.currency) + ': ' + GN.formatNum(p.balance || 0) + ')' +
+      '</option>';
+  }).join('');
+
+  var body = document.getElementById('formModalBody');
+  var titleEl = document.getElementById('formModalTitle');
+  if (!body || !titleEl) return;
+  titleEl.textContent = 'تغذية وعاء من: ' + bank.name;
+
+  body.innerHTML = '<div class="form-grid">' +
+    '<div class="field full" style="background:var(--gold-l);color:var(--gold-d);padding:10px 12px;border-radius:10px;font-size:12.5px;font-weight:700;text-align:center">' +
+      'الرصيد الحالي في ' + GN.esc(bank.name) + ': ' + GN.formatNum(bank.balance || 0) + ' ' + GN.esc(bank.currency || 'SDG') +
+    '</div>' +
+    '<div class="field full"><label>الوعاء المستلم <span class="req">*</span></label>' +
+      '<div class="input-wrap"><select id="fp_pool">' + poolOpts + '</select></div></div>' +
+    '<div class="field"><label>المبلغ <span class="req">*</span></label>' +
+      '<div class="input-wrap"><input type="number" id="fp_amount" step="0.01" min="0" placeholder="0"></div></div>' +
+    '<div class="field"><label>العملة</label>' +
+      '<div class="input-wrap"><input type="text" id="fp_currency" readonly style="background:var(--bg-alt)"></div></div>' +
+    '<div class="field full"><label>السبب / المرجع</label>' +
+      '<div class="input-wrap"><input type="text" id="fp_reason" value="تغذية وعاء ذهب"></div></div>' +
+    '<div class="field full"><label>ملاحظات</label>' +
+      '<div class="input-wrap"><textarea id="fp_notes" rows="2"></textarea></div></div>' +
+  '</div>';
+
+  var poolSel = document.getElementById('fp_pool');
+  var curEl = document.getElementById('fp_currency');
+
+  function syncCurrency(){
+    var opt = poolSel.options[poolSel.selectedIndex];
+    curEl.value = opt ? opt.getAttribute('data-currency') : bank.currency;
+  }
+  poolSel.addEventListener('change', syncCurrency);
+  syncCurrency();
+
+  var sub = document.getElementById('formModalSubmit');
+  if (sub) sub.style.display = '';
+  GN.openModal('formModal');
+
+  sub.onclick = function(){
+    var poolId = poolSel.value;
+    var amount = Number(document.getElementById('fp_amount').value) || 0;
+    var reason = document.getElementById('fp_reason').value.trim();
+    var notes  = document.getElementById('fp_notes').value.trim();
+
+    if (!poolId || !amount || amount <= 0){ GN.toast(GN.t('fieldRequired'), 'bad'); return; }
+
+    var pool = eligible.filter(function(p){ return p.id === poolId; })[0];
+    if (!pool){ GN.toast('الوعاء غير موجود', 'bad'); return; }
+
+    if (Number(bank.balance || 0) < amount){
+      GN.toast('رصيد البنك لا يكفي', 'bad');
+      return;
+    }
+
+    sub.disabled = true;
+
+    /* 1) حوالة صادرة من البنك */
+    GN.addBankTransfer({
+      bank_id: bank.id,
+      type: 'out',
+      amount: amount,
+      currency: pool.currency || bank.currency,
+      party: pool.name_ar,
+      notes: reason + (notes ? ' — ' + notes : ''),
+      source: 'feed_pool',
+      source_id: poolId,
+      date: GN.today()
+    }).then(function(){
+      /* 2) زيادة رصيد الوعاء */
+      pool.balance = Number(pool.balance || 0) + amount;
+
+      /* 3) إذا الوعاء مرتبط بحساب بنكي → حوالة واردة */
+      if (pool.type === 'bank_account' && pool.bank_id && pool.bank_id !== bank.id){
+        GN.addBankTransfer({
+          bank_id: pool.bank_id,
+          type: 'in',
+          amount: amount,
+          currency: pool.currency || bank.currency,
+          party: bank.name,
+          notes: 'استلام تغذية من ' + bank.name,
+          source: 'feed_pool',
+          source_id: poolId,
+          date: GN.today()
+        }).then(function(){
+          finalize();
+        });
+      } else {
+        finalize();
+      }
+    });
+
+    function finalize(){
+      /* 4) سجل حركة الوعاء */
+      GN.supa.from('fund_transactions').insert({
+        pool_id: poolId,
+        type: 'in',
+        amount: amount,
+        currency: pool.currency || bank.currency,
+        reason: reason + ' من ' + bank.name,
+        reference_type: 'initial_deposit',
+        notes: notes,
+        created_by: GN.session.user.id
+      }).then(function(){
+        GN.savePublicData(GN.dash.data).then(function(){
+          sub.disabled = false;
+          GN.toast('تمت التغذية — ' + GN.formatNum(amount) + ' ' + (pool.currency || bank.currency), 'ok');
+          GN.notify.send({
+            type: 'edit',
+            section: 'banking',
+            target: 'bank',
+            target_id: bank.id,
+            title: 'تغذية وعاء',
+            body: GN.formatNum(amount) + ' ' + (pool.currency || bank.currency) + ' → ' + pool.name_ar
+          });
+          GN.closeModal('formModal');
+          GN.renderSection('banking');
+        });
+      });
+    }
+  };
 };
 
 /* ============================================================
@@ -247,7 +552,7 @@ GN.openBankDetails = function(idx){
 };
 
 /* ============================================================
-   Banking Forms
+   Bank Form
    ============================================================ */
 GN.openBankForm = function(idx){
   if (!GN.session.isAdmin){ GN.toast(GN.t('readOnlyNotice'), 'bad'); return; }
@@ -307,12 +612,15 @@ GN.delBank = function(idx){
   });
 };
 
+/* ============================================================
+   Transfer Form
+   ============================================================ */
 GN.openTransferForm = function(idx, type, bankIdx){
   if (!GN.session.isAdmin){ GN.toast(GN.t('readOnlyNotice'), 'bad'); return; }
   var arr = GN.dh.list('transfers');
   var banks = GN.dh.list('banks');
   var item = idx >= 0 ? arr[idx] : { type: type || 'in', bank_id: banks[bankIdx] ? banks[bankIdx].id : '' };
-  var bankOptions = banks.map(function(b){ return { value: b.id, label: b.name }; });
+  var bankOptions = banks.map(function(b){ return { value: b.id, label: b.name + ' (' + (b.currency || 'SDG') + ')' }; });
 
   GN.openForm(type === 'out' ? 'addOutgoing' : 'addIncoming', [
     { id:'date',       label: GN.t('date'), type:'date', value:item.date || GN.today() },
@@ -325,60 +633,105 @@ GN.openTransferForm = function(idx, type, bankIdx){
     { id:'notes',      label: GN.t('notes'), type:'textarea', full:true, value:item.notes || '' }
   ]);
 
-  GN.onSubmit(function(done){
-    var v = GN.readForm(['date','bank_id','amount','currency','party','invoice','attachment','notes']);
-    if (!v.amount || Number(v.amount) <= 0){ GN.toast(GN.t('fieldRequired'), 'bad'); done(false); return; }
+  var submitBtn = document.getElementById('formModalSubmit');
+  if (submitBtn){
+    submitBtn.onclick = function(){
+      var v = GN.readForm(['date','bank_id','amount','currency','party','invoice','attachment','notes']);
+      if (!v.amount || Number(v.amount) <= 0){ GN.toast(GN.t('fieldRequired'), 'bad'); return; }
 
-    var isNew = idx < 0;
-    var obj = {
-      id: isNew ? GN.uid() : arr[idx].id,
-      type: item.type || type || 'in',
-      date: v.date,
-      bank_id: v.bank_id,
-      amount: Number(v.amount) || 0,
-      currency: v.currency || 'SDG',
-      party: v.party,
-      invoice: v.invoice,
-      attachment: v.attachment,
-      notes: v.notes
-    };
-    if (idx >= 0) Object.assign(arr[idx], obj);
-    else arr.push(obj);
+      var bank = banks.filter(function(b){ return b.id === v.bank_id; })[0];
+      var bankName = bank ? bank.name : '';
 
-    var bank = banks.filter(function(b){ return b.id === v.bank_id; })[0];
-    if (bank && isNew){
-      bank.balance = Number(bank.balance || 0) + (obj.type === 'in' ? obj.amount : -obj.amount);
-    }
+      var isNew = idx < 0;
+      var obj = {
+        id: isNew ? GN.uid() : arr[idx].id,
+        type: item.type || type || 'in',
+        date: v.date,
+        bank_id: v.bank_id,
+        bank_name: bankName,
+        amount: Number(v.amount) || 0,
+        currency: v.currency || 'SDG',
+        party: v.party,
+        invoice: v.invoice,
+        attachment: v.attachment,
+        notes: v.notes,
+        source: 'manual',
+        created_at: isNew ? GN.now() : arr[idx].created_at
+      };
 
-    if (isNew){
-      GN.notify.send({
-        type: obj.type === 'in' ? 'add' : 'delete',
-        section:'banking', target:'transfer', target_id: obj.id,
-        title: (obj.type === 'in' ? GN.t('notifTransferIn') : GN.t('notifTransferOut')),
-        body: (obj.type === 'in' ? '+' : '-') + GN.formatNum(obj.amount) + ' ' + obj.currency + ' - ' + obj.party
+      if (bank){
+        if (isNew){
+          bank.balance = Number(bank.balance || 0) + (obj.type === 'in' ? obj.amount : -obj.amount);
+        } else {
+          var oldAmt = Number(arr[idx].amount || 0);
+          var oldType = arr[idx].type || 'in';
+          var oldBankId = arr[idx].bank_id;
+          var oldBank = banks.filter(function(b){ return b.id === oldBankId; })[0];
+          if (oldBank){
+            oldBank.balance = Number(oldBank.balance || 0) - (oldType === 'in' ? oldAmt : -oldAmt);
+          }
+          bank.balance = Number(bank.balance || 0) + (obj.type === 'in' ? obj.amount : -obj.amount);
+        }
+      }
+
+      if (isNew) arr.push(obj);
+      else Object.assign(arr[idx], obj);
+
+      if (isNew){
+        GN.notify.send({
+          type: obj.type === 'in' ? 'add' : 'delete',
+          section:'banking', target:'transfer', target_id: obj.id,
+          title: (obj.type === 'in' ? GN.t('notifTransferIn') : GN.t('notifTransferOut')),
+          body: (obj.type === 'in' ? '+' : '-') + GN.formatNum(obj.amount) + ' ' + obj.currency + ' - ' + obj.party
+        });
+      }
+
+      submitBtn.disabled = true;
+      GN.savePublicData(GN.dash.data).then(function(saved){
+        submitBtn.disabled = false;
+        if (saved){
+          GN.toast(isNew ? 'تم تسجيل الحوالة' : GN.t('savedSuccess'), 'ok');
+        } else {
+          GN.toast(GN.t('saveFailed'), 'bad');
+        }
+        GN.closeModal('formModal');
+        GN.renderSection('banking');
       });
-    }
-    done(true);
-  });
+    };
+  }
 };
 
 GN.delTransfer = function(idx){
   var arr = GN.dh.list('transfers');
   if (!arr[idx]) return;
   var item = arr[idx];
+  var banks = GN.dh.list('banks');
   GN.dh.askDelete().then(function(ok){
     if (!ok) return;
+
+    if (item && item.bank_id){
+      var bank = banks.filter(function(b){ return b.id === item.bank_id; })[0];
+      if (bank){
+        var amt = Number(item.amount || 0);
+        bank.balance = Number(bank.balance || 0) - (item.type === 'in' ? amt : -amt);
+      }
+    }
+
     if (item && item.id) GN.notify.markDeleted('banking', 'transfer', item.id);
     arr.splice(idx, 1);
-    GN.dh.save();
+
+    GN.savePublicData(GN.dash.data).then(function(saved){
+      if (saved) GN.toast(GN.t('deletedSuccess'), 'ok');
+      GN.renderSection('banking');
+    });
   });
 };
 
 GN.exportTransfersExcel = function(){
   var arr = GN.dh.list('transfers');
-  var rows = [['Date','Type','Party','Amount','Currency','Invoice','Notes']];
+  var rows = [['Date','Bank','Type','Party','Amount','Currency','Invoice','Source','Notes']];
   arr.forEach(function(t){
-    rows.push([t.date, t.type, t.party, t.amount, t.currency, t.invoice, t.notes]);
+    rows.push([t.date, t.bank_name || '', t.type, t.party, t.amount, t.currency, t.invoice, t.source || 'manual', t.notes]);
   });
   GN.downloadCSV('transfers-' + GN.today() + '.csv', rows);
   GN.toast(GN.t('success'), 'ok');

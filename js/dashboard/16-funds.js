@@ -1,6 +1,7 @@
 /* ============================================================
    Gold Nile — Dashboard / Fund Pools
-   Virtual pools · Deposits · Withdrawals · Transfers · FX
+   Gold Capital · Gold Profit · Bank-linked · Direct to bank
+   "أرباح → دولار" replaces FX form · USD pool removed
    ============================================================ */
 (function(){
 'use strict';
@@ -30,9 +31,9 @@ GN.sections.funds = function(){
           '<button class="btn btn-gold btn-sm" data-act="fund-transfer">' +
             '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M7 17 17 7M17 7H8M17 7v9"/></svg> ' +
             GN.esc(GN.t('fundTransfer')) + '</button>' +
-          '<button class="btn btn-pri btn-sm" data-act="fund-fx">' +
-            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M17 3 21 7l-4 4M3 7h18M7 21 3 17l4-4M21 17H3"/></svg> ' +
-            GN.esc(GN.t('fundFx')) + '</button>' +
+          '<button class="btn btn-pri btn-sm" data-act="fund-usd">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> ' +
+            'أرباح → دولار</button>' +
         '</div>'
       : '') +
   '</div>';
@@ -57,7 +58,7 @@ GN.loadFunds = function(){
   if (!GN.supa) return;
 
   Promise.all([
-    GN.supa.from('fund_pools').select('*').order('code'),
+    GN.supa.from('fund_pools').select('*').eq('is_active', true).order('code'),
     GN.supa.from('fund_transactions')
       .select('*, fund_pools:pool_id(code, name_ar, currency)')
       .order('created_at', { ascending: false })
@@ -67,7 +68,8 @@ GN.loadFunds = function(){
       console.error('[funds]', res[0].error);
       return;
     }
-    GN._fundsCache = res[0].data || [];
+    /* استبعاد الوعاء الدولاري */
+    GN._fundsCache = (res[0].data || []).filter(function(p){ return p.code !== 'usd'; });
     GN._fundsTxCache = res[1].error ? [] : (res[1].data || []);
     GN.renderFundsGrid();
     GN.renderFundsTransactions();
@@ -90,34 +92,29 @@ GN.renderFundsGrid = function(){
   var banks = GN.dh.list('banks') || [];
   var isAdmin = GN.session.isOwner && GN.session.isAdmin;
 
-  var iconMap = {
-    gold:   'gold',
-    profit: 'dollar',
-    usd:    'dollar'
-  };
+  var iconMap = { gold: 'gold', profit: 'dollar' };
   var colorMap = {
     gold:   { bg:'linear-gradient(145deg,#F5EBD1,#E5D5A8)', fg:'var(--gold-d)' },
-    profit: { bg:'linear-gradient(145deg,#DDF3E3,#B5E0C4)', fg:'var(--ok)' },
-    usd:    { bg:'linear-gradient(145deg,#E1EFED,#B8D9D5)', fg:'var(--nile)' }
+    profit: { bg:'linear-gradient(145deg,#DDF3E3,#B5E0C4)', fg:'var(--ok)' }
   };
 
-  var html = '<div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr))">';
+  var html = '<div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr))">';
 
   pools.forEach(function(p){
     var icon = iconMap[p.code] || 'wallet';
     var style = colorMap[p.code] || { bg:'var(--bg-alt)', fg:'var(--ink-2)' };
     var txCount = GN._fundsTxCache.filter(function(t){ return t.pool_id === p.id; }).length;
 
-    /* Resolve linked bank */
     var linkedBank = null;
     if (p.type === 'bank_account' && p.bank_id){
       linkedBank = banks.filter(function(b){ return b.id === p.bank_id; })[0];
     }
 
+    var hasBalance = Number(p.balance || 0) > 0;
+
     html += '<div class="card" style="margin:0;position:relative;overflow:hidden">' +
       '<div style="position:absolute;top:0;inset-inline:0;height:4px;background:' + style.bg + '"></div>' +
 
-      /* Header */
       '<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">' +
         '<div style="width:48px;height:48px;border-radius:14px;display:grid;place-items:center;background:' + style.bg + ';color:' + style.fg + ';flex:none">' +
           GN.navIcon(icon) +
@@ -131,7 +128,6 @@ GN.renderFundsGrid = function(){
           : '') +
       '</div>' +
 
-      /* Balance */
       '<div style="text-align:center;padding:14px 0;border-top:1px dashed var(--line);border-bottom:1px dashed var(--line);margin-bottom:12px">' +
         '<div style="font-size:11px;color:var(--ink-2);font-weight:700;margin-bottom:4px">' + GN.esc(GN.t('fundBalance')) + '</div>' +
         '<div style="font-family:\'Reem Kufi\',sans-serif;font-size:26px;font-weight:700;color:var(--ink)">' +
@@ -139,7 +135,6 @@ GN.renderFundsGrid = function(){
         '</div>' +
       '</div>' +
 
-      /* Bank link */
       (linkedBank
         ? '<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--nile-l);color:var(--nile);border-radius:10px;font-size:11.5px;font-weight:700;margin-bottom:12px">' +
             GN.navIcon('bank') +
@@ -150,7 +145,25 @@ GN.renderFundsGrid = function(){
             GN.esc(GN.t('fundNoBank')) +
           '</div>') +
 
-      /* Footer */
+      (isAdmin && hasBalance
+        ? '<div style="display:flex;gap:6px;margin-bottom:10px">' +
+            '<button class="btn btn-gold btn-sm" data-fund-withdraw-to-bank="' + GN.escAttr(p.id) + '" style="flex:1;font-size:11.5px">' +
+              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:14px;height:14px"><path d="M12 5v14M5 12l7 7 7-7"/></svg> ' +
+              'سحب إلى بنك</button>' +
+            (p.code === 'profit'
+              ? '<button class="btn btn-pri btn-sm" data-fund-to-usd="' + GN.escAttr(p.id) + '" style="flex:1;font-size:11.5px">' +
+                  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:14px;height:14px"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> ' +
+                  'أرباح → دولار</button>'
+              : '') +
+          '</div>'
+        : (isAdmin && p.code === 'profit'
+            ? '<div style="display:flex;gap:6px;margin-bottom:10px">' +
+                '<button class="btn btn-pri btn-sm" data-fund-to-usd="' + GN.escAttr(p.id) + '" style="flex:1;font-size:11.5px">' +
+                  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:14px;height:14px"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> ' +
+                  'أرباح → دولار</button>' +
+              '</div>'
+            : '')) +
+
       '<div style="display:flex;gap:8px;justify-content:space-between;font-size:11.5px;color:var(--ink-3);font-weight:600">' +
         '<span>' + GN.esc(GN.t('fundTxCount')) + ': ' + txCount + '</span>' +
         (isAdmin
@@ -174,10 +187,315 @@ GN.renderFundsGrid = function(){
       GN.openPoolEditForm(b.getAttribute('data-fund-edit'));
     });
   });
+
+  GN.$$('[data-fund-withdraw-to-bank]').forEach(function(b){
+    b.addEventListener('click', function(){
+      GN.openWithdrawToBankForm(b.getAttribute('data-fund-withdraw-to-bank'));
+    });
+  });
+
+  GN.$$('[data-fund-to-usd]').forEach(function(b){
+    b.addEventListener('click', function(){
+      GN.openProfitToUsdForm(b.getAttribute('data-fund-to-usd'));
+    });
+  });
 };
 
 /* ============================================================
-   Global transactions list
+   Withdraw to Bank Form (سحب من أي وعاء إلى بنك بنفس العملة)
+   ============================================================ */
+GN.openWithdrawToBankForm = function(poolId){
+  if (!GN.session.isOwner || !GN.session.isAdmin){ GN.toast(GN.t('readOnlyNotice'), 'bad'); return; }
+
+  var pool = GN._fundsCache.filter(function(p){ return p.id === poolId; })[0];
+  if (!pool) return;
+
+  var banks = GN.dh.list('banks') || [];
+  var eligibleBanks = banks.filter(function(b){
+    return (b.currency || 'SDG') === pool.currency;
+  });
+
+  if (!eligibleBanks.length){
+    GN.toast('لا يوجد حساب بنكي بنفس العملة (' + pool.currency + ')', 'bad');
+    return;
+  }
+
+  var body = document.getElementById('formModalBody');
+  var titleEl = document.getElementById('formModalTitle');
+  if (!body || !titleEl) return;
+  titleEl.textContent = 'سحب من ' + pool.name_ar + ' إلى حساب بنكي';
+
+  var bankOpts = eligibleBanks.map(function(b){
+    return '<option value="' + GN.escAttr(b.id) + '">' + GN.esc(b.name) + ' — ' + GN.formatNum(b.balance || 0) + ' ' + GN.esc(b.currency || 'SDG') + '</option>';
+  }).join('');
+
+  body.innerHTML = '<div class="form-grid">' +
+
+    '<div class="field full" style="background:var(--gold-l);color:var(--gold-d);padding:10px 12px;border-radius:10px;font-size:12.5px;font-weight:700;text-align:center">' +
+      'الرصيد المتاح في الوعاء: ' + GN.formatNum(pool.balance || 0) + ' ' + GN.esc(pool.currency) +
+    '</div>' +
+
+    '<div class="field full"><label>الحساب البنكي المستلم <span class="req">*</span></label>' +
+      '<div class="input-wrap"><select id="wb_bank">' + bankOpts + '</select></div></div>' +
+
+    '<div class="field"><label>المبلغ <span class="req">*</span></label>' +
+      '<div class="input-wrap" style="display:flex;gap:6px">' +
+        '<input type="number" id="wb_amount" step="0.01" min="0" max="' + (pool.balance || 0) + '" placeholder="0" style="flex:1">' +
+        '<button type="button" class="btn btn-sec btn-sm" data-wb-all style="min-height:42px;padding:0 12px;font-size:12px">الكل</button>' +
+      '</div></div>' +
+
+    '<div class="field"><label>العملة</label>' +
+      '<div class="input-wrap"><input type="text" readonly value="' + GN.esc(pool.currency) + '" style="background:var(--bg-alt)"></div></div>' +
+
+    '<div class="field full"><label>السبب / المرجع <span class="req">*</span></label>' +
+      '<div class="input-wrap"><input type="text" id="wb_reason" placeholder="مثال: أرباح دورة GLD-2026-0001"></div></div>' +
+
+    '<div class="field full"><label>رقم الحوالة (اختياري)</label>' +
+      '<div class="input-wrap"><input type="text" id="wb_ref" dir="ltr" placeholder="TRF-12345"></div></div>' +
+
+    '<div class="field full"><label>ملاحظات</label>' +
+      '<div class="input-wrap"><textarea id="wb_notes" rows="2"></textarea></div></div>' +
+
+  '</div>';
+
+  var sub = document.getElementById('formModalSubmit');
+  if (sub) sub.style.display = '';
+  GN.openModal('formModal');
+
+  body.querySelector('[data-wb-all]').onclick = function(){
+    document.getElementById('wb_amount').value = pool.balance || 0;
+  };
+
+  sub.onclick = function(){
+    var amount = Number(document.getElementById('wb_amount').value) || 0;
+    var bankId = document.getElementById('wb_bank').value;
+    var reason = document.getElementById('wb_reason').value.trim();
+    var ref = document.getElementById('wb_ref').value.trim();
+    var notes = document.getElementById('wb_notes').value.trim();
+
+    if (!amount || amount <= 0){ GN.toast('أدخل مبلغًا صحيحًا', 'bad'); return; }
+    if (amount > Number(pool.balance || 0)){ GN.toast('المبلغ أكبر من الرصيد المتاح', 'bad'); return; }
+    if (!bankId){ GN.toast('اختر الحساب البنكي', 'bad'); return; }
+    if (!reason){ GN.toast('السبب مطلوب', 'bad'); return; }
+
+    sub.disabled = true;
+    var newPoolBalance = Number(pool.balance || 0) - amount;
+
+    GN.addBankTransfer({
+      bank_id: bankId,
+      type: 'in',
+      amount: amount,
+      currency: pool.currency,
+      party: pool.name_ar,
+      invoice: ref,
+      notes: reason + (notes ? ' — ' + notes : ''),
+      source: 'fund',
+      source_id: pool.id,
+      date: GN.today()
+    }).then(function(){
+      GN.supa.from('fund_pools').update({
+        balance: newPoolBalance,
+        updated_at: new Date().toISOString()
+      }).eq('id', pool.id).then(function(){
+        GN.supa.from('fund_transactions').insert({
+          pool_id: pool.id,
+          type: 'out',
+          amount: amount,
+          currency: pool.currency,
+          reason: reason + ' — سحب إلى ' + (
+            (eligibleBanks.filter(function(b){ return b.id === bankId; })[0] || {}).name || 'بنك'
+          ),
+          reference_type: 'manual',
+          notes: notes,
+          created_by: GN.session.user.id
+        }).then(function(){
+          sub.disabled = false;
+          GN.toast('✓ تم السحب إلى البنك — ' + GN.formatNum(amount) + ' ' + pool.currency, 'ok');
+          GN.notify.send({
+            type: 'edit',
+            section: 'funds',
+            target: 'pool',
+            target_id: pool.id,
+            title: 'سحب من وعاء',
+            body: GN.formatNum(amount) + ' ' + pool.currency + ' — ' + reason
+          });
+          GN.closeModal('formModal');
+          GN.loadFunds();
+        });
+      });
+    });
+  };
+};
+
+/* ============================================================
+   Profit → USD Form
+   تحويل من وعاء الأرباح (SDG) إلى حساب بنكي USD
+   ============================================================ */
+GN.openProfitToUsdForm = function(poolId){
+  if (!GN.session.isOwner || !GN.session.isAdmin){ GN.toast(GN.t('readOnlyNotice'), 'bad'); return; }
+
+  var pool = GN._fundsCache.filter(function(p){ return p.id === poolId; })[0];
+  if (!pool) return;
+
+  var banks = GN.dh.list('banks') || [];
+  var usdBanks = banks.filter(function(b){ return (b.currency || 'SDG') === 'USD'; });
+
+  if (!usdBanks.length){
+    GN.toast('لا يوجد حساب بنكي بالدولار', 'bad');
+    return;
+  }
+
+  var body = document.getElementById('formModalBody');
+  var titleEl = document.getElementById('formModalTitle');
+  if (!body || !titleEl) return;
+  titleEl.textContent = 'تحويل أرباح إلى دولار';
+
+  var bankOpts = usdBanks.map(function(b){
+    return '<option value="' + GN.escAttr(b.id) + '">' + GN.esc(b.name) + ' — ' + GN.formatNum(b.balance || 0) + ' USD</option>';
+  }).join('');
+
+  body.innerHTML = '<div class="form-grid">' +
+
+    '<div class="field full" style="background:var(--ok-l);color:var(--ok);padding:10px 12px;border-radius:10px;font-size:12.5px;font-weight:700;text-align:center">' +
+      'رصيد وعاء الأرباح: ' + GN.formatNum(pool.balance || 0) + ' SDG' +
+    '</div>' +
+
+    '<div class="field"><label>المبلغ بالجنيه (SDG) <span class="req">*</span></label>' +
+      '<div class="input-wrap" style="display:flex;gap:6px">' +
+        '<input type="number" id="pu_sdg" step="0.01" min="0" max="' + (pool.balance || 0) + '" placeholder="0" style="flex:1">' +
+        '<button type="button" class="btn btn-sec btn-sm" data-pu-all style="min-height:42px;padding:0 12px;font-size:12px">الكل</button>' +
+      '</div></div>' +
+
+    '<div class="field"><label>سعر شراء الدولار (SDG) <span class="req">*</span></label>' +
+      '<div class="input-wrap"><input type="number" id="pu_rate" step="0.01" min="0" placeholder="مثال: 2500"></div></div>' +
+
+    '<div class="field full" style="background:var(--gold-l);color:var(--gold-dd);padding:14px;border-radius:12px">' +
+      '<div style="text-align:center">' +
+        '<div style="font-size:12px;font-weight:700;color:var(--gold-d);margin-bottom:4px">ستحصل على</div>' +
+        '<div style="font-family:\'Reem Kufi\',sans-serif;font-size:26px;font-weight:800" id="pu_result">0.00 USD</div>' +
+      '</div>' +
+    '</div>' +
+
+    '<div class="field full"><label>الحساب البنكي بالدولار <span class="req">*</span></label>' +
+      '<div class="input-wrap"><select id="pu_bank">' + bankOpts + '</select></div></div>' +
+
+    '<div class="field full"><label>السبب / المرجع <span class="req">*</span></label>' +
+      '<div class="input-wrap"><input type="text" id="pu_reason" placeholder="مثال: تحويل أرباح دورة GLD-2026-0001"></div></div>' +
+
+    '<div class="field full"><label>رقم الحوالة (اختياري)</label>' +
+      '<div class="input-wrap"><input type="text" id="pu_ref" dir="ltr" placeholder="TRF-12345"></div></div>' +
+
+    '<div class="field full"><label>ملاحظات</label>' +
+      '<div class="input-wrap"><textarea id="pu_notes" rows="2"></textarea></div></div>' +
+
+  '</div>';
+
+  var sub = document.getElementById('formModalSubmit');
+  if (sub) sub.style.display = '';
+  GN.openModal('formModal');
+
+  var sdgEl = document.getElementById('pu_sdg');
+  var rateEl = document.getElementById('pu_rate');
+  var resultEl = document.getElementById('pu_result');
+
+  function calc(){
+    var sdg = Number(sdgEl.value) || 0;
+    var rate = Number(rateEl.value) || 0;
+    var usd = rate > 0 ? (sdg / rate) : 0;
+    resultEl.textContent = GN.formatNum(usd, 2) + ' USD';
+  }
+  sdgEl.addEventListener('input', calc);
+  rateEl.addEventListener('input', calc);
+
+  body.querySelector('[data-pu-all]').onclick = function(){
+    sdgEl.value = pool.balance || 0;
+    calc();
+  };
+
+  sub.onclick = function(){
+    var sdgAmount = Number(sdgEl.value) || 0;
+    var rate = Number(rateEl.value) || 0;
+    var bankId = document.getElementById('pu_bank').value;
+    var reason = document.getElementById('pu_reason').value.trim();
+    var ref = document.getElementById('pu_ref').value.trim();
+    var notes = document.getElementById('pu_notes').value.trim();
+
+    if (!sdgAmount || sdgAmount <= 0){ GN.toast('أدخل المبلغ بالجنيه', 'bad'); return; }
+    if (sdgAmount > Number(pool.balance || 0)){ GN.toast('المبلغ أكبر من رصيد الوعاء', 'bad'); return; }
+    if (!rate || rate <= 0){ GN.toast('أدخل سعر شراء الدولار', 'bad'); return; }
+    if (!bankId){ GN.toast('اختر الحساب البنكي', 'bad'); return; }
+    if (!reason){ GN.toast('السبب مطلوب', 'bad'); return; }
+
+    sub.disabled = true;
+
+    var usdAmount = sdgAmount / rate;
+    var newPoolBalance = Number(pool.balance || 0) - sdgAmount;
+    var bank = usdBanks.filter(function(b){ return b.id === bankId; })[0];
+
+    /* 1) سجل صرف العملة */
+    GN.supa.from('currency_exchanges').insert({
+      from_currency: 'SDG',
+      to_currency: 'USD',
+      from_amount: sdgAmount,
+      to_amount: usdAmount,
+      rate: rate,
+      reason: reason,
+      source_pool_id: pool.id,
+      target_pool_id: null,
+      notes: notes,
+      created_by: GN.session.user.id
+    }).then(function(){
+      /* 2) خصم من وعاء الأرباح */
+      GN.supa.from('fund_pools').update({
+        balance: newPoolBalance,
+        updated_at: new Date().toISOString()
+      }).eq('id', pool.id).then(function(){
+        /* 3) حركة صادرة في الوعاء */
+        GN.supa.from('fund_transactions').insert({
+          pool_id: pool.id,
+          type: 'out',
+          amount: sdgAmount,
+          currency: 'SDG',
+          reason: reason + ' — تحويل إلى دولار (سعر ' + GN.formatNum(rate) + ')',
+          reference_type: 'manual',
+          exchange_rate: rate,
+          notes: notes,
+          created_by: GN.session.user.id
+        }).then(function(){
+          /* 4) حوالة واردة إلى الحساب البنكي بالدولار */
+          GN.addBankTransfer({
+            bank_id: bankId,
+            type: 'in',
+            amount: usdAmount,
+            currency: 'USD',
+            party: pool.name_ar,
+            invoice: ref,
+            notes: reason + (notes ? ' — ' + notes : ''),
+            source: 'fund',
+            source_id: pool.id,
+            date: GN.today()
+          }).then(function(){
+            sub.disabled = false;
+            GN.toast('✓ تم التحويل — ' + GN.formatNum(usdAmount, 2) + ' USD إلى ' + (bank ? bank.name : ''), 'ok');
+            GN.notify.send({
+              type: 'edit',
+              section: 'funds',
+              target: 'pool',
+              target_id: pool.id,
+              title: 'تحويل أرباح إلى دولار',
+              body: GN.formatNum(sdgAmount) + ' SDG → ' + GN.formatNum(usdAmount, 2) + ' USD'
+            });
+            GN.closeModal('formModal');
+            GN.loadFunds();
+          });
+        });
+      });
+    });
+  };
+};
+
+/* ============================================================
+   Transactions list
    ============================================================ */
 GN.renderFundsTransactions = function(){
   var wrap = document.getElementById('fundsTxWrap');
@@ -195,7 +513,6 @@ GN.renderFundsTransactions = function(){
 
   var rows = txs.slice(0, 100).map(function(t){
     var isIn = t.type === 'in' || t.type === 'transfer_in';
-    var isOut = t.type === 'out' || t.type === 'transfer_out';
     var sign = isIn ? '+' : '-';
     var color = isIn ? 'var(--ok)' : 'var(--bad)';
 
@@ -292,309 +609,7 @@ GN.openFundHistory = function(poolId){
 };
 
 /* ============================================================
-   Deposit / Withdraw / Transfer / FX forms
-   ============================================================ */
-GN.fundForm = function(mode){
-  if (!GN.session.isOwner || !GN.session.isAdmin){ GN.toast(GN.t('readOnlyNotice'), 'bad'); return; }
-
-  var body = document.getElementById('formModalBody');
-  var titleEl = document.getElementById('formModalTitle');
-  if (!body || !titleEl) return;
-
-  var titles = {
-    deposit:  GN.t('fundDeposit'),
-    withdraw: GN.t('fundWithdraw'),
-    transfer: GN.t('fundTransfer'),
-    fx:       GN.t('fundFx')
-  };
-  titleEl.textContent = titles[mode];
-
-  var poolOpts = GN._fundsCache.map(function(p){
-    return '<option value="' + GN.escAttr(p.id) + '">' + GN.esc(p.name_ar) + ' (' + GN.esc(p.currency) + ': ' + GN.formatNum(p.balance) + ')</option>';
-  }).join('');
-
-  var html = '';
-
-  if (mode === 'deposit' || mode === 'withdraw'){
-    html = '<div class="form-grid">' +
-      '<div class="field full"><label>' + GN.esc(GN.t('fundPool')) + ' <span class="req">*</span></label>' +
-        '<div class="input-wrap"><select id="f_pool">' + poolOpts + '</select></div></div>' +
-      '<div class="field"><label>' + GN.esc(GN.t('txAmount')) + ' <span class="req">*</span></label>' +
-        '<div class="input-wrap"><input type="number" id="f_amount" step="0.01" min="0"></div></div>' +
-      '<div class="field"><label>' + GN.esc(GN.t('fundReason')) + ' <span class="req">*</span></label>' +
-        '<div class="input-wrap"><input type="text" id="f_reason" placeholder="' + GN.escAttr(mode === 'deposit' ? 'تحويل من الحساب العام' : 'مصروف / سحب') + '"></div></div>' +
-      '<div class="field full"><label>' + GN.esc(GN.t('fundRef')) + '</label>' +
-        '<div class="input-wrap"><input type="text" id="f_ref" dir="ltr" placeholder="TRF-12345"></div></div>' +
-      '<div class="field full"><label>' + GN.esc(GN.t('notes')) + '</label>' +
-        '<div class="input-wrap"><textarea id="f_notes" rows="2"></textarea></div></div>' +
-    '</div>';
-
-  } else if (mode === 'transfer'){
-    html = '<div class="form-grid">' +
-      '<div class="field full" style="background:var(--nile-l);color:var(--nile);padding:10px;border-radius:10px;font-size:12.5px;font-weight:600;text-align:center">' +
-        GN.esc(GN.t('fundTransferNote')) +
-      '</div>' +
-      '<div class="field"><label>' + GN.esc(GN.t('fundFromPool')) + ' <span class="req">*</span></label>' +
-        '<div class="input-wrap"><select id="f_from">' + poolOpts + '</select></div></div>' +
-      '<div class="field"><label>' + GN.esc(GN.t('fundToPool')) + ' <span class="req">*</span></label>' +
-        '<div class="input-wrap"><select id="f_to">' + poolOpts + '</select></div></div>' +
-      '<div class="field"><label>' + GN.esc(GN.t('txAmount')) + ' <span class="req">*</span></label>' +
-        '<div class="input-wrap"><input type="number" id="f_amount" step="0.01" min="0"></div></div>' +
-      '<div class="field"><label>' + GN.esc(GN.t('fundReason')) + ' <span class="req">*</span></label>' +
-        '<div class="input-wrap"><input type="text" id="f_reason" placeholder="نقل رأس مال"></div></div>' +
-      '<div class="field full"><label>' + GN.esc(GN.t('notes')) + '</label>' +
-        '<div class="input-wrap"><textarea id="f_notes" rows="2"></textarea></div></div>' +
-    '</div>';
-
-  } else if (mode === 'fx'){
-    var usdPools = GN._fundsCache.filter(function(p){ return p.currency === 'USD'; });
-    var sdgPools = GN._fundsCache.filter(function(p){ return p.currency === 'SDG'; });
-    var usdOpts = usdPools.map(function(p){
-      return '<option value="' + GN.escAttr(p.id) + '">' + GN.esc(p.name_ar) + ' (' + GN.formatNum(p.balance) + ' USD)</option>';
-    }).join('');
-    var sdgOpts = sdgPools.map(function(p){
-      return '<option value="' + GN.escAttr(p.id) + '">' + GN.esc(p.name_ar) + ' (' + GN.formatNum(p.balance) + ' SDG)</option>';
-    }).join('');
-
-    html = '<div class="form-grid">' +
-      '<div class="field full" style="background:var(--gold-l);color:var(--gold-d);padding:10px;border-radius:10px;font-size:12.5px;font-weight:700;text-align:center">' +
-        GN.esc(GN.t('fundFxNote')) +
-      '</div>' +
-      '<div class="field"><label>' + GN.esc(GN.t('fundFxDir')) + '</label>' +
-        '<div class="input-wrap"><select id="fx_dir">' +
-          '<option value="usd_to_sdg">USD → SDG</option>' +
-          '<option value="sdg_to_usd">SDG → USD</option>' +
-        '</select></div></div>' +
-      '<div class="field"><label>' + GN.esc(GN.t('fundRate')) + ' <span class="req">*</span></label>' +
-        '<div class="input-wrap"><input type="number" id="fx_rate" step="0.01" min="0" placeholder="مثال: 2500"></div></div>' +
-      '<div class="field"><label>' + GN.esc(GN.t('fundFromPool')) + '</label>' +
-        '<div class="input-wrap"><select id="fx_from"></select></div></div>' +
-      '<div class="field"><label>' + GN.esc(GN.t('fundToPool')) + '</label>' +
-        '<div class="input-wrap"><select id="fx_to"></select></div></div>' +
-      '<div class="field"><label>' + GN.esc(GN.t('fundFxAmount')) + ' <span class="req">*</span></label>' +
-        '<div class="input-wrap"><input type="number" id="fx_amount" step="0.01" min="0"></div></div>' +
-      '<div class="field full"><label>' + GN.esc(GN.t('fundFxResult')) + '</label>' +
-        '<div class="input-wrap"><input type="number" id="fx_result" readonly style="background:var(--gold-l);color:var(--gold-dd);font-weight:800"></div></div>' +
-      '<div class="field full"><label>' + GN.esc(GN.t('fundReason')) + ' <span class="req">*</span></label>' +
-        '<div class="input-wrap"><input type="text" id="fx_reason" placeholder="شراء دولار / تحويل"></div></div>' +
-      '<div class="field full"><label>' + GN.esc(GN.t('notes')) + '</label>' +
-        '<div class="input-wrap"><textarea id="fx_notes" rows="2"></textarea></div></div>' +
-    '</div>';
-  }
-
-  /* Insert HTML FIRST */
-  body.innerHTML = html;
-
-  var sub = document.getElementById('formModalSubmit');
-  if (sub) sub.style.display = '';
-  GN.openModal('formModal');
-
-  /* ============================================================
-     Bank info banner — ONLY for deposit/withdraw
-     ============================================================ */
-  if (mode === 'deposit' || mode === 'withdraw'){
-    (function bindBankBanner(){
-      var poolSel = document.getElementById('f_pool');
-      if (!poolSel) return;
-
-      function updateBankInfo(){
-        var pid = poolSel.value;
-        var p = GN._fundsCache.filter(function(x){ return x.id === pid; })[0];
-        var oldBanner = document.getElementById('f_bank_banner');
-        if (oldBanner) oldBanner.remove();
-
-        if (!p || p.type !== 'bank_account' || !p.bank_id) return;
-        var banks = GN.dh.list('banks') || [];
-        var bank = banks.filter(function(b){ return b.id === p.bank_id; })[0];
-        if (!bank) return;
-
-        var banner = document.createElement('div');
-        banner.id = 'f_bank_banner';
-        banner.style.cssText = 'background:var(--nile-l);color:var(--nile);padding:10px 12px;border-radius:10px;font-size:12.5px;font-weight:700;text-align:center;margin-bottom:12px';
-        banner.textContent = '🏦 ' + GN.t('fundLinkedNote') + ': ' + bank.name + (bank.account_number ? ' — ...' + bank.account_number.slice(-4) : '');
-
-        var formGrid = body.querySelector('.form-grid');
-        if (formGrid) formGrid.parentNode.insertBefore(banner, formGrid);
-      }
-
-      poolSel.addEventListener('change', updateBankInfo);
-      updateBankInfo();
-    })();
-  }
-
-  /* ============================================================
-     FX specific wiring
-     ============================================================ */
-  if (mode === 'fx'){
-    var dirSel = document.getElementById('fx_dir');
-    var fromSel = document.getElementById('fx_from');
-    var toSel = document.getElementById('fx_to');
-    var amtIn = document.getElementById('fx_amount');
-    var rateIn = document.getElementById('fx_rate');
-    var resultIn = document.getElementById('fx_result');
-    var usdPools = GN._fundsCache.filter(function(p){ return p.currency === 'USD'; });
-    var sdgPools = GN._fundsCache.filter(function(p){ return p.currency === 'SDG'; });
-    var usdOptions = usdPools.map(function(p){
-      return '<option value="' + GN.escAttr(p.id) + '">' + GN.esc(p.name_ar) + ' (' + GN.formatNum(p.balance) + ' USD)</option>';
-    }).join('');
-    var sdgOptions = sdgPools.map(function(p){
-      return '<option value="' + GN.escAttr(p.id) + '">' + GN.esc(p.name_ar) + ' (' + GN.formatNum(p.balance) + ' SDG)</option>';
-    }).join('');
-
-    function refreshFxPools(){
-      if (dirSel.value === 'usd_to_sdg'){
-        fromSel.innerHTML = usdOptions;
-        toSel.innerHTML = sdgOptions;
-      } else {
-        fromSel.innerHTML = sdgOptions;
-        toSel.innerHTML = usdOptions;
-      }
-    }
-    function calcFx(){
-      var amt = Number(amtIn.value) || 0;
-      var rate = Number(rateIn.value) || 0;
-      resultIn.value = (amt * rate).toFixed(2);
-    }
-    dirSel.addEventListener('change', function(){ refreshFxPools(); calcFx(); });
-    amtIn.addEventListener('input', calcFx);
-    rateIn.addEventListener('input', calcFx);
-    refreshFxPools();
-  }
-
-  /* ============================================================
-     Submit
-     ============================================================ */
-  sub.onclick = function(){
-    sub.disabled = true;
-
-    if (mode === 'deposit' || mode === 'withdraw'){
-      var poolId = document.getElementById('f_pool').value;
-      var amount = Number(document.getElementById('f_amount').value) || 0;
-      var reason = document.getElementById('f_reason').value.trim();
-      if (!amount || !reason){ GN.toast(GN.t('fieldRequired'), 'bad'); sub.disabled = false; return; }
-
-      var pool = GN._fundsCache.filter(function(p){ return p.id === poolId; })[0];
-      if (!pool){ GN.toast('حوض غير موجود', 'bad'); sub.disabled = false; return; }
-
-      var delta = mode === 'deposit' ? amount : -amount;
-      var newBalance = Number(pool.balance || 0) + delta;
-      if (newBalance < 0){ GN.toast('الرصيد لا يكفي', 'bad'); sub.disabled = false; return; }
-
-      var txPayload = {
-        pool_id: poolId,
-        type: mode === 'deposit' ? 'in' : 'out',
-        amount: amount,
-        currency: pool.currency,
-        reason: reason,
-        reference_type: 'manual',
-        notes: document.getElementById('f_notes').value.trim(),
-        created_by: GN.session.user.id
-      };
-
-      GN.supa.from('fund_transactions').insert(txPayload).then(function(r){
-        if (r.error){ GN.toast(r.error.message, 'bad'); sub.disabled = false; return; }
-        GN.supa.from('fund_pools').update({ balance: newBalance, updated_at: new Date().toISOString() }).eq('id', poolId).then(function(){
-          GN.toast(mode === 'deposit' ? 'تم الإيداع' : 'تم السحب', 'ok');
-          GN.closeModal('formModal');
-          GN.loadFunds();
-        });
-      });
-
-    } else if (mode === 'transfer'){
-      var fromId = document.getElementById('f_from').value;
-      var toId = document.getElementById('f_to').value;
-      var amount2 = Number(document.getElementById('f_amount').value) || 0;
-      var reason2 = document.getElementById('f_reason').value.trim();
-      if (fromId === toId){ GN.toast('لا يمكن التحويل لنفس الحوض', 'bad'); sub.disabled = false; return; }
-      if (!amount2 || !reason2){ GN.toast(GN.t('fieldRequired'), 'bad'); sub.disabled = false; return; }
-
-      var fromPool = GN._fundsCache.filter(function(p){ return p.id === fromId; })[0];
-      var toPool = GN._fundsCache.filter(function(p){ return p.id === toId; })[0];
-      if (!fromPool || !toPool){ GN.toast('خطأ في الأوعية', 'bad'); sub.disabled = false; return; }
-      if (fromPool.currency !== toPool.currency){
-        GN.toast('العملات مختلفة — استخدم تحويل العملات', 'bad'); sub.disabled = false; return;
-      }
-      if (Number(fromPool.balance || 0) < amount2){ GN.toast('الرصيد لا يكفي', 'bad'); sub.disabled = false; return; }
-
-      var txs = [
-        { pool_id: fromId, type: 'transfer_out', amount: amount2, currency: fromPool.currency, reason: reason2, counterparty_pool_id: toId, reference_type: 'manual', created_by: GN.session.user.id },
-        { pool_id: toId, type: 'transfer_in', amount: amount2, currency: toPool.currency, reason: reason2, counterparty_pool_id: fromId, reference_type: 'manual', created_by: GN.session.user.id }
-      ];
-
-      GN.supa.from('fund_transactions').insert(txs).then(function(r){
-        if (r.error){ GN.toast(r.error.message, 'bad'); sub.disabled = false; return; }
-
-        GN.supa.from('fund_pools').update({ balance: Number(fromPool.balance) - amount2, updated_at: new Date().toISOString() }).eq('id', fromId).then(function(){
-          GN.supa.from('fund_pools').update({ balance: Number(toPool.balance) + amount2, updated_at: new Date().toISOString() }).eq('id', toId).then(function(){
-            GN.toast('تم التحويل', 'ok');
-            GN.closeModal('formModal');
-            GN.loadFunds();
-          });
-        });
-      });
-
-    } else if (mode === 'fx'){
-      var dir = document.getElementById('fx_dir').value;
-      var fromId2 = document.getElementById('fx_from').value;
-      var toId2 = document.getElementById('fx_to').value;
-      var amount3 = Number(document.getElementById('fx_amount').value) || 0;
-      var rate = Number(document.getElementById('fx_rate').value) || 0;
-      var reason3 = document.getElementById('fx_reason').value.trim();
-      if (!amount3 || !rate || !reason3){ GN.toast(GN.t('fieldRequired'), 'bad'); sub.disabled = false; return; }
-
-      var fromPool2 = GN._fundsCache.filter(function(p){ return p.id === fromId2; })[0];
-      var toPool2 = GN._fundsCache.filter(function(p){ return p.id === toId2; })[0];
-      if (!fromPool2 || !toPool2){ GN.toast('خطأ في الأوعية', 'bad'); sub.disabled = false; return; }
-      if (Number(fromPool2.balance || 0) < amount3){ GN.toast('الرصيد لا يكفي', 'bad'); sub.disabled = false; return; }
-
-      var toAmount = amount3 * rate;
-
-      var fxPayload = {
-        from_currency: dir === 'usd_to_sdg' ? 'USD' : 'SDG',
-        to_currency: dir === 'usd_to_sdg' ? 'SDG' : 'USD',
-        from_amount: amount3,
-        to_amount: toAmount,
-        rate: rate,
-        reason: reason3,
-        source_pool_id: fromId2,
-        target_pool_id: toId2,
-        notes: document.getElementById('fx_notes').value.trim(),
-        created_by: GN.session.user.id
-      };
-
-      GN.supa.from('currency_exchanges').insert(fxPayload).then(function(r){
-        if (r.error){ GN.toast(r.error.message, 'bad'); sub.disabled = false; return; }
-
-        var txs2 = [
-          { pool_id: fromId2, type: 'out', amount: amount3, currency: fromPool2.currency, reason: reason3 + ' (شراء ' + toPool2.currency + ')', reference_type: 'manual', exchange_rate: rate, created_by: GN.session.user.id },
-          { pool_id: toId2, type: 'in', amount: toAmount, currency: toPool2.currency, reason: reason3 + ' (من ' + fromPool2.currency + ')', reference_type: 'manual', exchange_rate: rate, created_by: GN.session.user.id }
-        ];
-
-        GN.supa.from('fund_transactions').insert(txs2).then(function(){
-          GN.supa.from('fund_pools').update({ balance: Number(fromPool2.balance) - amount3, updated_at: new Date().toISOString() }).eq('id', fromId2).then(function(){
-            GN.supa.from('fund_pools').update({ balance: Number(toPool2.balance) + toAmount, updated_at: new Date().toISOString() }).eq('id', toId2).then(function(){
-              GN.toast('تم تحويل العملة', 'ok');
-              GN.closeModal('formModal');
-              GN.loadFunds();
-            });
-          });
-        });
-      });
-    }
-  };
-};
-
-/* ============================================================
-   Bind
-   ============================================================ */
-GN.bindSection.funds = function(){
-  GN.bindAction('fund-deposit',  function(){ GN.fundForm('deposit'); });
-  GN.bindAction('fund-withdraw', function(){ GN.fundForm('withdraw'); });
-  GN.bindAction('fund-transfer', function(){ GN.fundForm('transfer'); });
-  GN.bindAction('fund-fx',       function(){ GN.fundForm('fx'); });
-};
-/* ============================================================
-   Pool Edit Form (name + type + bank link)
+   Pool Edit Form
    ============================================================ */
 GN.openPoolEditForm = function(poolId){
   if (!GN.session.isOwner || !GN.session.isAdmin){ GN.toast(GN.t('readOnlyNotice'), 'bad'); return; }
@@ -620,7 +635,6 @@ GN.openPoolEditForm = function(poolId){
 
   body.innerHTML =
     '<div class="form-grid">' +
-
       '<div class="field full"><label>' + GN.esc(GN.t('fundPoolName')) + ' <span class="req">*</span></label>' +
         '<div class="input-wrap"><input type="text" id="fpe_name" value="' + GN.escAttr(pool.name_ar || '') + '"></div></div>' +
 
@@ -649,21 +663,18 @@ GN.openPoolEditForm = function(poolId){
           GN.esc(GN.t('fundDeletePool')) +
         '</button>' +
       '</div>' +
-
     '</div>';
 
   var sub = document.getElementById('formModalSubmit');
   if (sub) sub.style.display = '';
   GN.openModal('formModal');
 
-  /* Toggle bank select */
   var typeSel = document.getElementById('fpe_type');
   var bankWrap = document.getElementById('fpe_bank_wrap');
   typeSel.addEventListener('change', function(){
     bankWrap.style.display = this.value === 'bank_account' ? 'block' : 'none';
   });
 
-  /* Delete button */
   body.querySelector('[data-fpe-delete]').onclick = function(){
     GN.confirm({
       title: GN.t('fundDeletePool'),
@@ -684,7 +695,6 @@ GN.openPoolEditForm = function(poolId){
     });
   };
 
-  /* Submit */
   sub.onclick = function(){
     var name = document.getElementById('fpe_name').value.trim();
     if (!name){ GN.toast(GN.t('fieldRequired'), 'bad'); return; }
@@ -714,5 +724,238 @@ GN.openPoolEditForm = function(poolId){
     });
   };
 };
+
+/* ============================================================
+   Deposit / Withdraw / Transfer (بدون FX)
+   ============================================================ */
+GN.fundForm = function(mode){
+  if (!GN.session.isOwner || !GN.session.isAdmin){ GN.toast(GN.t('readOnlyNotice'), 'bad'); return; }
+
+  var body = document.getElementById('formModalBody');
+  var titleEl = document.getElementById('formModalTitle');
+  if (!body || !titleEl) return;
+
+  var titles = {
+    deposit:  GN.t('fundDeposit'),
+    withdraw: GN.t('fundWithdraw'),
+    transfer: GN.t('fundTransfer')
+  };
+  titleEl.textContent = titles[mode];
+
+  var poolOpts = GN._fundsCache.map(function(p){
+    return '<option value="' + GN.escAttr(p.id) + '" data-balance="' + (p.balance || 0) + '" data-currency="' + GN.escAttr(p.currency) + '">' +
+      GN.esc(p.name_ar) + ' (' + GN.esc(p.currency) + ': ' + GN.formatNum(p.balance) + ')</option>';
+  }).join('');
+
+  var html = '';
+
+  if (mode === 'deposit' || mode === 'withdraw'){
+    html = '<div class="form-grid">' +
+      '<div class="field full"><label>' + GN.esc(GN.t('fundPool')) + ' <span class="req">*</span></label>' +
+        '<div class="input-wrap"><select id="f_pool">' + poolOpts + '</select></div></div>' +
+      '<div class="field"><label>' + GN.esc(GN.t('txAmount')) + ' <span class="req">*</span></label>' +
+        '<div class="input-wrap" style="display:flex;gap:6px">' +
+          '<input type="number" id="f_amount" step="0.01" min="0" style="flex:1">' +
+          '<button type="button" class="btn btn-sec btn-sm" data-f-all style="min-height:42px;padding:0 12px;font-size:12px">الكل</button>' +
+        '</div></div>' +
+      '<div class="field"><label>' + GN.esc(GN.t('fundReason')) + ' <span class="req">*</span></label>' +
+        '<div class="input-wrap"><input type="text" id="f_reason" placeholder="' + GN.escAttr(mode === 'deposit' ? 'تحويل من الحساب العام' : 'مصروف / سحب') + '"></div></div>' +
+      '<div class="field full"><label>' + GN.esc(GN.t('fundRef')) + '</label>' +
+        '<div class="input-wrap"><input type="text" id="f_ref" dir="ltr" placeholder="TRF-12345"></div></div>' +
+      '<div class="field full"><label>' + GN.esc(GN.t('notes')) + '</label>' +
+        '<div class="input-wrap"><textarea id="f_notes" rows="2"></textarea></div></div>' +
+    '</div>';
+
+  } else if (mode === 'transfer'){
+    html = '<div class="form-grid">' +
+      '<div class="field full" style="background:var(--nile-l);color:var(--nile);padding:10px;border-radius:10px;font-size:12.5px;font-weight:600;text-align:center">' +
+        GN.esc(GN.t('fundTransferNote')) +
+      '</div>' +
+      '<div class="field"><label>' + GN.esc(GN.t('fundFromPool')) + ' <span class="req">*</span></label>' +
+        '<div class="input-wrap"><select id="f_from">' + poolOpts + '</select></div>' +
+        '<div style="font-size:11px;color:var(--ink-3);margin-top:4px" id="f_from_balance"></div></div>' +
+      '<div class="field"><label>' + GN.esc(GN.t('fundToPool')) + ' <span class="req">*</span></label>' +
+        '<div class="input-wrap"><select id="f_to">' + poolOpts + '</select></div></div>' +
+      '<div class="field"><label>' + GN.esc(GN.t('txAmount')) + ' <span class="req">*</span></label>' +
+        '<div class="input-wrap" style="display:flex;gap:6px">' +
+          '<input type="number" id="f_amount" step="0.01" min="0" style="flex:1">' +
+          '<button type="button" class="btn btn-sec btn-sm" data-f-all style="min-height:42px;padding:0 12px;font-size:12px">الكل</button>' +
+        '</div></div>' +
+      '<div class="field"><label>' + GN.esc(GN.t('fundReason')) + ' <span class="req">*</span></label>' +
+        '<div class="input-wrap"><input type="text" id="f_reason" placeholder="نقل رأس مال"></div></div>' +
+      '<div class="field full"><label>' + GN.esc(GN.t('notes')) + '</label>' +
+        '<div class="input-wrap"><textarea id="f_notes" rows="2"></textarea></div></div>' +
+    '</div>';
+  }
+
+  body.innerHTML = html;
+
+  var sub = document.getElementById('formModalSubmit');
+  if (sub) sub.style.display = '';
+  GN.openModal('formModal');
+
+  /* "الكل" */
+  var allBtn = body.querySelector('[data-f-all]');
+  if (allBtn){
+    allBtn.onclick = function(){
+      var poolSel = document.getElementById(mode === 'transfer' ? 'f_from' : 'f_pool');
+      if (!poolSel) return;
+      var opt = poolSel.options[poolSel.selectedIndex];
+      var balance = Number(opt.getAttribute('data-balance') || 0);
+      document.getElementById('f_amount').value = balance;
+    };
+  }
+
+  /* عرض الرصيد تحت "من الحوض" في التحويل */
+  if (mode === 'transfer'){
+    var fromSel = document.getElementById('f_from');
+    var fromBal = document.getElementById('f_from_balance');
+    function updateFromBalance(){
+      var opt = fromSel.options[fromSel.selectedIndex];
+      var bal = opt ? (opt.getAttribute('data-balance') || 0) : 0;
+      if (fromBal) fromBal.textContent = 'الرصيد المتاح: ' + GN.formatNum(bal);
+    }
+    fromSel.addEventListener('change', updateFromBalance);
+    updateFromBalance();
+  }
+
+  sub.onclick = function(){
+    sub.disabled = true;
+
+    if (mode === 'deposit' || mode === 'withdraw'){
+      var poolId = document.getElementById('f_pool').value;
+      var amount = Number(document.getElementById('f_amount').value) || 0;
+      var reason = document.getElementById('f_reason').value.trim();
+      var ref = document.getElementById('f_ref').value.trim();
+      var notes = document.getElementById('f_notes').value.trim();
+
+      if (!amount || !reason){ GN.toast(GN.t('fieldRequired'), 'bad'); sub.disabled = false; return; }
+
+      var pool = GN._fundsCache.filter(function(p){ return p.id === poolId; })[0];
+      if (!pool){ GN.toast('حوض غير موجود', 'bad'); sub.disabled = false; return; }
+
+      var delta = mode === 'deposit' ? amount : -amount;
+      var newBalance = Number(pool.balance || 0) + delta;
+      if (newBalance < 0){ GN.toast('الرصيد لا يكفي', 'bad'); sub.disabled = false; return; }
+
+      var afterTx = function(){
+        GN.savePublicData(GN.dash.data).then(function(){
+          sub.disabled = false;
+          GN.toast(mode === 'deposit' ? 'تم الإيداع' : 'تم السحب', 'ok');
+          GN.closeModal('formModal');
+          GN.loadFunds();
+        });
+      };
+
+      if (pool.type === 'bank_account' && pool.bank_id){
+        GN.addBankTransfer({
+          bank_id: pool.bank_id,
+          type: mode === 'deposit' ? 'in' : 'out',
+          amount: amount,
+          currency: pool.currency,
+          party: reason,
+          invoice: ref,
+          notes: (mode === 'deposit' ? 'إيداع' : 'سحب') + ' — ' + pool.name_ar,
+          source: 'fund',
+          source_id: poolId,
+          date: GN.today()
+        }).then(function(){
+          pool.balance = newBalance;
+          GN.supa.from('fund_transactions').insert({
+            pool_id: poolId,
+            type: mode === 'deposit' ? 'in' : 'out',
+            amount: amount,
+            currency: pool.currency,
+            reason: reason,
+            reference_type: 'manual',
+            notes: notes,
+            created_by: GN.session.user.id
+          }).then(afterTx);
+        });
+      } else {
+        pool.balance = newBalance;
+        GN.supa.from('fund_transactions').insert({
+          pool_id: poolId,
+          type: mode === 'deposit' ? 'in' : 'out',
+          amount: amount,
+          currency: pool.currency,
+          reason: reason,
+          reference_type: 'manual',
+          notes: notes,
+          created_by: GN.session.user.id
+        }).then(afterTx);
+      }
+
+    } else if (mode === 'transfer'){
+      var fromId = document.getElementById('f_from').value;
+      var toId = document.getElementById('f_to').value;
+      var amount2 = Number(document.getElementById('f_amount').value) || 0;
+      var reason2 = document.getElementById('f_reason').value.trim();
+      var notes2 = document.getElementById('f_notes').value.trim();
+
+      if (fromId === toId){ GN.toast('لا يمكن التحويل لنفس الحوض', 'bad'); sub.disabled = false; return; }
+      if (!amount2 || !reason2){ GN.toast(GN.t('fieldRequired'), 'bad'); sub.disabled = false; return; }
+
+      var fromPool = GN._fundsCache.filter(function(p){ return p.id === fromId; })[0];
+      var toPool = GN._fundsCache.filter(function(p){ return p.id === toId; })[0];
+      if (!fromPool || !toPool){ GN.toast('خطأ في الأوعية', 'bad'); sub.disabled = false; return; }
+      if (fromPool.currency !== toPool.currency){
+        GN.toast('العملات مختلفة — استخدم "أرباح → دولار"', 'bad'); sub.disabled = false; return;
+      }
+      if (Number(fromPool.balance || 0) < amount2){ GN.toast('الرصيد لا يكفي', 'bad'); sub.disabled = false; return; }
+
+      var txs = [
+        { pool_id: fromId, type: 'transfer_out', amount: amount2, currency: fromPool.currency, reason: reason2, counterparty_pool_id: toId, reference_type: 'manual', created_by: GN.session.user.id },
+        { pool_id: toId, type: 'transfer_in', amount: amount2, currency: toPool.currency, reason: reason2, counterparty_pool_id: fromId, reference_type: 'manual', created_by: GN.session.user.id }
+      ];
+
+      GN.supa.from('fund_transactions').insert(txs).then(function(r){
+        if (r.error){ GN.toast(r.error.message, 'bad'); sub.disabled = false; return; }
+
+        fromPool.balance = Number(fromPool.balance) - amount2;
+        toPool.balance = Number(toPool.balance) + amount2;
+
+        var afterTransfer = function(){
+          GN.savePublicData(GN.dash.data).then(function(){
+            sub.disabled = false;
+            GN.toast('تم التحويل', 'ok');
+            GN.closeModal('formModal');
+            GN.loadFunds();
+          });
+        };
+
+        var promises = [];
+        if (fromPool.type === 'bank_account' && fromPool.bank_id){
+          promises.push(GN.addBankTransfer({
+            bank_id: fromPool.bank_id, type: 'out', amount: amount2, currency: fromPool.currency,
+            party: toPool.name_ar, notes: reason2, source: 'fund', source_id: fromId, date: GN.today()
+          }));
+        }
+        if (toPool.type === 'bank_account' && toPool.bank_id){
+          promises.push(GN.addBankTransfer({
+            bank_id: toPool.bank_id, type: 'in', amount: amount2, currency: toPool.currency,
+            party: fromPool.name_ar, notes: reason2, source: 'fund', source_id: toId, date: GN.today()
+          }));
+        }
+        Promise.all(promises).then(afterTransfer);
+      });
+    }
+  };
+};
+
+/* ============================================================
+   Bind
+   ============================================================ */
+GN.bindSection.funds = function(){
+  GN.bindAction('fund-deposit',  function(){ GN.fundForm('deposit'); });
+  GN.bindAction('fund-withdraw', function(){ GN.fundForm('withdraw'); });
+  GN.bindAction('fund-transfer', function(){ GN.fundForm('transfer'); });
+  GN.bindAction('fund-usd',      function(){
+    var profitPool = GN._fundsCache.filter(function(p){ return p.code === 'profit'; })[0];
+    if (!profitPool){ GN.toast('وعاء الأرباح غير موجود', 'bad'); return; }
+    GN.openProfitToUsdForm(profitPool.id);
+  });
+};
+
 console.log('[Gold Nile] dashboard/16-funds.js loaded');
 })();

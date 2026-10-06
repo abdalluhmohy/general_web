@@ -1,6 +1,7 @@
 /* ============================================================
    Gold Nile — Dashboard / Expenses
    Category tree · Register expenses · Filters · Party linking
+   + Auto-log bank transfer when paid from bank
    ============================================================ */
 (function(){
 'use strict';
@@ -98,7 +99,7 @@ GN.clearExpFilters = function(){
 };
 
 /* ============================================================
-   Load data
+   Load
    ============================================================ */
 GN.loadExpensesData = function(){
   if (!GN.supa) return;
@@ -129,7 +130,6 @@ GN.loadExpensesData = function(){
     GN._expCatsCache = res[0].data || [];
     GN._expensesCache = res[1].error ? [] : (res[1].data || []);
 
-    /* Populate cat filter */
     var catSel = document.getElementById('exf_cat');
     if (catSel){
       var cur = GN._expFilter.category_id;
@@ -167,7 +167,6 @@ GN.renderExpKPIs = function(){
     byCat[cid] = (byCat[cid] || 0) + amt;
   });
 
-  /* Top category */
   var topCatId = null, topCatAmt = 0;
   Object.keys(byCat).forEach(function(k){
     if (byCat[k] > topCatAmt){ topCatAmt = byCat[k]; topCatId = k; }
@@ -225,7 +224,6 @@ GN.renderExpTable = function(){
   var rows = items.map(function(e){
     var catName = catMap[e.category_id] || '—';
     var partyLbl = partyLbls[e.party_type] || '—';
-
     var fromPayable = !!e.source_payable_id;
     var payableBadge = fromPayable
       ? ' <span class="chip n" style="font-size:10px;padding:2px 6px">' + GN.esc(GN.t('expFromPayable') || 'من استحقاق') + '</span>'
@@ -269,7 +267,7 @@ GN.renderExpTable = function(){
 };
 
 /* ============================================================
-   Category manager (tree)
+   Category Manager
    ============================================================ */
 GN.openExpCatManager = function(){
   if (!GN.session.isOwner || !GN.session.isAdmin){ GN.toast(GN.t('readOnlyNotice'), 'bad'); return; }
@@ -346,7 +344,6 @@ GN.openExpCatManager = function(){
     });
     tree.innerHTML = html;
 
-    /* Bind */
     tree.querySelectorAll('[data-exc-add-sub]').forEach(function(b){
       b.onclick = function(){ GN.openExpCatForm(null, b.getAttribute('data-exc-add-sub'), function(){ renderTree(); }); };
     });
@@ -383,7 +380,7 @@ GN.openExpCatManager = function(){
 };
 
 /* ============================================================
-   Category form
+   Category Form
    ============================================================ */
 GN.openExpCatForm = function(editId, parentId, onDone){
   if (!GN.session.isOwner || !GN.session.isAdmin){ GN.toast(GN.t('readOnlyNotice'), 'bad'); return; }
@@ -423,7 +420,7 @@ GN.openExpCatForm = function(editId, parentId, onDone){
 };
 
 /* ============================================================
-   Expense form
+   Expense Form
    ============================================================ */
 GN.openExpenseForm = function(id){
   if (!GN.session.isOwner || !GN.session.isAdmin){ GN.toast(GN.t('readOnlyNotice'), 'bad'); return; }
@@ -437,7 +434,7 @@ GN.openExpenseForm = function(id){
 
   titleEl.textContent = isEdit ? GN.t('expEdit') : GN.t('expAdd');
 
-  /* Category options (indented tree) */
+  /* Category options */
   var catOpts = '<option value="">— ' + GN.esc(GN.t('expSelectCat')) + ' —</option>';
   var roots = GN._expCatsCache.filter(function(c){ return !c.parent_id; });
   roots.forEach(function(r){
@@ -448,13 +445,11 @@ GN.openExpenseForm = function(id){
     });
   });
 
-  /* Employee options */
   var employees = GN.dh.list('employees');
   var empOpts = '<option value="">—</option>' + employees.map(function(e){
     return '<option value="' + GN.escAttr(e.id) + '" data-name="' + GN.escAttr(e.name || '') + '"' + (item && item.party_id === e.id ? ' selected' : '') + '>' + GN.esc(e.name || '') + '</option>';
   }).join('');
 
-  /* Agent options */
   var agents = GN.dh.list('gold_agents');
   var agentOpts = '<option value="">—</option>' + agents.map(function(a){
     return '<option value="' + GN.escAttr(a.id) + '" data-name="' + GN.escAttr(a.name || '') + '"' + (item && item.party_id === a.id ? ' selected' : '') + '>' + GN.esc(a.code + ' — ' + a.name) + '</option>';
@@ -532,7 +527,6 @@ GN.openExpenseForm = function(id){
   ptSel.addEventListener('change', toggleParty);
   toggleParty();
 
-  /* Payment method toggle */
   var mSel = document.getElementById('ef_method');
   var bWrap = document.getElementById('ef_bank_wrap');
   mSel.addEventListener('change', function(){
@@ -565,6 +559,12 @@ GN.openExpenseForm = function(id){
 
     var method = mSel.value;
     var bankId = method === 'bank' ? document.getElementById('ef_bank').value : '';
+    var desc = document.getElementById('ef_desc').value.trim();
+
+    if (method === 'bank' && !bankId){
+      GN.toast('اختر الحساب البنكي', 'bad');
+      return;
+    }
 
     var payload = {
       category_id: catId,
@@ -576,7 +576,7 @@ GN.openExpenseForm = function(id){
       party_name: partyName,
       payment_method: method,
       bank_id: bankId,
-      description: document.getElementById('ef_desc').value.trim(),
+      description: desc,
       attachment_url: document.getElementById('ef_attach').value.trim(),
       status: 'paid',
       updated_at: new Date().toISOString()
@@ -585,30 +585,57 @@ GN.openExpenseForm = function(id){
     sub.disabled = true;
     var promise;
     if (isEdit){
-      promise = GN.supa.from('expenses').update(payload).eq('id', id);
+      promise = GN.supa.from('expenses').update(payload).eq('id', id).select();
     } else {
       payload.created_by = GN.session.user.id;
-      promise = GN.supa.from('expenses').insert(payload);
+      promise = GN.supa.from('expenses').insert(payload).select();
     }
 
     promise.then(function(res){
-      sub.disabled = false;
-      if (res.error){ GN.toast(res.error.message, 'bad'); console.error(res.error); return; }
-
-      GN.toast(isEdit ? GN.t('savedSuccess') : GN.t('addedSuccess'), 'ok');
-
-      if (!isEdit){
-        GN.notify.send({
-          type: 'add',
-          section: 'expenses',
-          target: 'expense',
-          title: 'مصروف جديد',
-          body: GN.formatMoneyPlain(amount, 'SDG') + (partyName ? ' — ' + partyName : '')
-        });
+      if (res.error){
+        sub.disabled = false;
+        GN.toast(res.error.message, 'bad');
+        console.error(res.error);
+        return;
       }
 
-      GN.closeModal('formModal');
-      GN.loadExpensesData();
+      /* إذا المصروف بنكي → سجّل حوالة */
+      var expenseId = isEdit ? id : (res.data && res.data[0] ? res.data[0].id : '');
+
+      var finalize = function(){
+        sub.disabled = false;
+        GN.toast(isEdit ? GN.t('savedSuccess') : GN.t('addedSuccess'), 'ok');
+
+        if (!isEdit){
+          GN.notify.send({
+            type: 'add',
+            section: 'expenses',
+            target: 'expense',
+            target_id: expenseId,
+            title: 'مصروف جديد',
+            body: GN.formatMoneyPlain(amount, 'SDG') + (partyName ? ' — ' + partyName : '')
+          });
+        }
+
+        GN.closeModal('formModal');
+        GN.loadExpensesData();
+      };
+
+      if (method === 'bank' && bankId){
+        GN.addBankTransfer({
+          bank_id: bankId,
+          type: 'out',
+          amount: amount,
+          currency: 'SDG',
+          party: partyName || '',
+          notes: 'مصروف — ' + (desc || ''),
+          source: 'expense',
+          source_id: expenseId,
+          date: date
+        }).then(finalize);
+      } else {
+        finalize();
+      }
     });
   };
 };
@@ -620,7 +647,7 @@ GN.deleteExpense = function(id){
   if (!GN.session.isOwner){ GN.toast(GN.t('readOnlyNotice'), 'bad'); return; }
   GN.confirm({
     title: GN.t('delete'),
-    text: 'حذف هذا المصروف؟',
+    text: 'حذف هذا المصروف؟ سيُحذف سجل الحوالة المرتبط به أيضًا.',
     okText: GN.t('delete'),
     cancelText: GN.t('cancel'),
     danger: true
@@ -628,6 +655,7 @@ GN.deleteExpense = function(id){
     if (!ok) return;
     GN.supa.from('expenses').delete().eq('id', id).then(function(res){
       if (res.error){ GN.toast(res.error.message, 'bad'); return; }
+      GN.removeBankTransfer('expense', id);
       GN.notify.markDeleted('expenses', 'expense', id);
       GN.toast(GN.t('deletedSuccess'), 'ok');
       GN.loadExpensesData();

@@ -6462,3 +6462,275 @@ body.drawer-open{
   .rep-search-bar input{ font-size:13px; }
   .rep-search-count{ font-size:11px; padding:2px 8px; }
 }
+
+
+/* ============================================================
+   Board of Directors — Professional Vertical Cards v3
+   ============================================================ */
+.board-grid-v3{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:24px;
+  margin-top:8px;
+}
+@media(max-width:900px){
+  .board-grid-v3{ grid-template-columns:repeat(2,1fr); gap:20px; }
+}
+@media(max-width:600px){
+  .board-grid-v3{ grid-template-columns:1fr; gap:16px; max-width:400px; margin-inline:auto; }
+}
+
+/* Card */
+.bm-v3{
+  background:var(--paper);
+  border:1px solid var(--line-2);
+  border-radius:24px;
+  overflow:hidden;
+  position:relative;
+  transition:.35s var(--ease);
+  box-shadow:0 4px 16px rgba(15,46,45,.06);
+  display:flex;
+  flex-direction:column;
+}
+
+/* Top gold gradient stripe */
+.bm-v3::before{
+  content:'';
+  position:absolute;
+  top:0;
+  inset-inline:0;
+  height:5px;
+  background:linear-gradient(90deg,#EBCB84,#C79A3D,#8C6A1F);
+  z-index:3;
+}
+
+.bm-v3:hover{
+  transform:translateY(-8px);
+  box-shadow:0 24px 60px rgba(15,46,45,.18);
+  border-color:rgba(197,155,61,.4);
+}
+
+/* Photo container — square crop, centered circle */
+.bm-v3-photo{
+  position:relative;
+  padding:32px 20px 0;
+  background:linear-gradient(180deg,#FBF9F3 0%,#F4EFE2 100%);
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+
+.bm-v3-photo-inner{
+  width:140px;
+  height:140px;
+  border-radius:50%;
+  overflow:hidden;
+  position:relative;
+  background:linear-gradient(155deg,#0E3B38,#1E6B67);
+  border:4px solid #fff;
+  box-shadow:0 12px 32px rgba(15,46,45,.18),0 0 0 1px rgba(197,155,61,.3);
+  transition:.35s var(--ease);
+}
+
+.bm-v3:hover .bm-v3-photo-inner{
+  transform:scale(1.05);
+  box-shadow:0 16px 40px rgba(15,46,45,.24),0 0 0 2px rgba(197,155,61,.5);
+}
+
+.bm-v3-photo-inner img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block;
+}
+
+.bm-v3-photo-inner .fallback{
+  width:100%;
+  height:100%;
+  display:grid;
+  place-items:center;
+  font-family:'Cairo',sans-serif;
+  font-size:56px;
+  font-weight:800;
+  color:rgba(229,194,113,.7);
+  background:linear-gradient(155deg,#0E3B38,#1E6B67);
+}
+
+/* Flag badge — top corner */
+.bm-v3-flag{
+  position:absolute;
+  top:20px;
+  inset-inline-end:20px;
+  width:38px;
+  height:26px;
+  border-radius:6px;
+  overflow:hidden;
+  display:flex;
+  box-shadow:0 4px 12px rgba(0,0,0,.15);
+  border:2px solid #fff;
+  z-index:2;
+}
+.bm-v3-flag span{ flex:1; display:block; }
+
+.flag-sd span:nth-child(1){ background:#D21034; }
+.flag-sd span:nth-child(2){ background:#fff; }
+.flag-sd span:nth-child(3){ background:#000; }
+.flag-sd span:nth-child(4){ background:#007229; }
+
+.flag-om span:nth-child(1){ background:#DB161B; }
+.flag-om span:nth-child(2){ background:#fff; }
+.flag-om span:nth-child(3){ background:#008000; }
+.flag-om span:nth-child(4){ background:#DB161B; }
+
+.flag-eg span:nth-child(1){ background:#CE1126; }
+.flag-eg span:nth-child(2){ background:#fff; }
+.flag-eg span:nth-child(3){ background:#000; }
+
+/* Info section */
+.bm-v3-info{
+  padding:22px 24px 26px;
+  text-align:center;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  flex:1;
+}
+
+.bm-v3-role{
+  font-family:'Cairo',sans-serif;
+  font-size:11px;
+  font-weight:800;
+  color:var(--gold-d);
+  letter-spacing:1.2px;
+  text-transform:uppercase;
+  margin-bottom:2px;
+}
+
+.bm-v3-name{
+  font-family:'Cairo',sans-serif;
+  font-size:20px;
+  font-weight:800;
+  color:var(--ink);
+  line-height:1.3;
+  margin:0;
+  word-break:break-word;
+}
+
+.bm-v3-subtitle{
+  font-size:12.5px;
+  color:var(--ink-3);
+  font-weight:600;
+  margin-top:-2px;
+}
+
+/* Divider */
+.bm-v3-divider{
+  width:40px;
+  height:3px;
+  margin:14px auto 12px;
+  background:linear-gradient(90deg,#EBCB84,#C79A3D);
+  border-radius:3px;
+}
+
+/* Quote */
+.bm-v3-quote{
+  font-family:'Cairo',sans-serif;
+  font-size:13.5px;
+  line-height:1.85;
+  color:var(--ink-2);
+  position:relative;
+  padding:0 8px;
+  font-style:italic;
+  text-align:center;
+  margin-top:auto;
+  flex:1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-height:60px;
+}
+
+.bm-v3-quote::before{
+  content:'"';
+  position:absolute;
+  top:-14px;
+  inset-inline-start:-4px;
+  font-family:'Cairo',serif;
+  font-size:48px;
+  line-height:1;
+  color:var(--gold);
+  opacity:.25;
+}
+
+.bm-v3-quote-text{
+  display:block;
+}
+
+/* Admin actions */
+.bm-v3-admin{
+  position:absolute;
+  top:20px;
+  inset-inline-start:20px;
+  display:none;
+  gap:5px;
+  z-index:5;
+}
+body.admin-on .bm-v3-admin{ display:flex; }
+
+.bm-v3-admin button{
+  width:32px;
+  height:32px;
+  border-radius:9px;
+  display:grid;
+  place-items:center;
+  border:0;
+  cursor:pointer;
+  padding:0;
+  transition:.15s;
+  backdrop-filter:blur(6px);
+}
+.bm-v3-admin .edit{
+  background:rgba(30,107,103,.92);
+  color:#fff;
+}
+.bm-v3-admin .edit:hover{ background:var(--nile); }
+.bm-v3-admin .del{
+  background:rgba(179,58,42,.92);
+  color:#fff;
+}
+.bm-v3-admin .del:hover{ background:var(--bad); }
+.bm-v3-admin svg{ width:14px; height:14px; }
+
+/* Mobile tweaks */
+@media(max-width:600px){
+  .bm-v3-photo{ padding:24px 16px 0; }
+  .bm-v3-photo-inner{ width:120px; height:120px; }
+  .bm-v3-info{ padding:18px 20px 22px; }
+  .bm-v3-name{ font-size:18px; }
+  .bm-v3-quote{ font-size:13px; }
+  .bm-v3-flag{ top:14px; inset-inline-end:14px; width:32px; height:22px; }
+  .bm-v3-admin{ top:14px; inset-inline-start:14px; }
+}
+
+/* ===== Dark theme overrides ===== */
+body.public-view .bm-v3{
+  background:var(--paper);
+  border-color:var(--line-2);
+}
+body.public-view .bm-v3:hover{
+  border-color:rgba(224,169,109,.35);
+  box-shadow:0 24px 60px rgba(0,0,0,.5);
+}
+body.public-view .bm-v3-photo{
+  background:linear-gradient(180deg,#0F1A38 0%,#101C3D 100%);
+}
+body.public-view .bm-v3-photo-inner{
+  border-color:var(--paper);
+  box-shadow:0 12px 32px rgba(0,0,0,.5),0 0 0 1px rgba(224,169,109,.3);
+}
+body.public-view .bm-v3-name{ color:var(--ink); }
+body.public-view .bm-v3-role{ color:var(--gold-b); }
+body.public-view .bm-v3-subtitle{ color:var(--ink-3); }
+body.public-view .bm-v3-quote{ color:var(--ink-2); }
+body.public-view .bm-v3-quote::before{ color:var(--gold-b); }
+body.public-view .bm-v3-flag{ border-color:var(--paper); }

@@ -1,40 +1,12 @@
 /* ============================================================
-   Gold Nile — Dashboard / Gold Cycles
-   Phase 2B-1: KPIs + Filters + Table (display only)
+   Gold Nile — Dashboard / Gold Cycles + Brokerages
+   Cycles (buy/sell) + Broker mode (commission only)
    ============================================================ */
 (function(){
 'use strict';
 
 var GN = window.GN = window.GN || {};
 
-/* ============================================================
-   Placeholders for other sections (Phase 3+)
-   ============================================================ */
-function placeholder(titleKey){
-  return function(){
-    return '<div class="card"><div class="empty">' +
-      '<div class="ic">' + GN.navIcon('cog') + '</div>' +
-      '<h4>' + GN.esc(GN.t(titleKey)) + '</h4>' +
-      '<p style="margin-top:6px;color:var(--ink-3)">قيد الإنشاء — المرحلة القادمة</p>' +
-      '</div></div>';
-  };
-}
-
-GN.sections.inventory = placeholder('navInventory');
-GN.sections.agents    = placeholder('navAgents');
-GN.sections.locations = placeholder('navLocations');
-GN.sections.funds     = placeholder('navFunds');
-GN.sections.expenses  = placeholder('navExpenses');
-
-GN.bindSection.inventory = function(){};
-GN.bindSection.agents    = function(){};
-GN.bindSection.locations = function(){};
-GN.bindSection.funds     = function(){};
-GN.bindSection.expenses  = function(){};
-
-/* ============================================================
-   State
-   ============================================================ */
 GN.cyclesFilter = { status: 'all', date_from: '', date_to: '', state_id: '' };
 GN._cyclesCache = [];
 
@@ -42,12 +14,22 @@ GN._cyclesCache = [];
    Section
    ============================================================ */
 GN.sections.cycles = function(){
+  var isAdmin = GN.session.isOwner && GN.session.isAdmin;
+
   var html = '<div class="fin-head"><div>' +
     '<h2>' + GN.navIcon('gold') + ' ' + GN.esc(GN.t('cyclesTitle')) + '</h2>' +
     '<span class="sub">' + GN.esc(GN.t('cyclesSub')) + '</span></div>' +
-    '<button class="btn btn-pri btn-sm" data-act="cycle-add">' +
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg> ' +
-      GN.esc(GN.t('cycleAdd')) + '</button></div>';
+    (isAdmin
+      ? '<div style="display:flex;gap:6px;flex-wrap:wrap">' +
+          '<button class="btn btn-gold btn-sm" data-act="brokerage-add">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M17 3 21 7l-4 4M3 7h18M7 21 3 17l4-4M21 17H3"/></svg> ' +
+            'وساطة جديدة</button>' +
+          '<button class="btn btn-pri btn-sm" data-act="cycle-add">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg> ' +
+            GN.esc(GN.t('cycleAdd')) + '</button>' +
+        '</div>'
+      : '') +
+  '</div>';
 
   html += '<div class="kpi-grid" id="cyclesKpis">' +
     '<div class="kpi"><div class="top"><span class="ic">' + GN.navIcon('gold') + '</span></div>' +
@@ -113,7 +95,7 @@ GN.clearCyclesFilters = function(){
 };
 
 /* ============================================================
-   Load from Supabase
+   Load
    ============================================================ */
 GN.loadCycles = function(){
   if (!GN.supa) return;
@@ -282,10 +264,7 @@ GN.renderCyclesTable = function(arr){
 };
 
 /* ============================================================
-   Placeholders for Phase 2B-2 & 2B-3
-   ============================================================ */
-/* ============================================================
-   Code Generator
+   Code Generators
    ============================================================ */
 GN.generateCycleCode = function(){
   return GN.supa.from('gold_cycles')
@@ -305,26 +284,295 @@ GN.generateCycleCode = function(){
     });
 };
 
+GN.generateBrokerCode = function(){
+  return GN.supa.from('gold_brokerages')
+    .select('code')
+    .ilike('code', 'BRK-' + new Date().getFullYear() + '-%')
+    .order('code', { ascending: false })
+    .limit(1)
+    .then(function(res){
+      var year = new Date().getFullYear();
+      var next = 1;
+      if (!res.error && res.data && res.data[0] && res.data[0].code){
+        var parts = res.data[0].code.split('-');
+        var last = parseInt(parts[parts.length - 1], 10);
+        if (!isNaN(last)) next = last + 1;
+      }
+      return 'BRK-' + year + '-' + String(next).padStart(4, '0');
+    });
+};
+
 /* ============================================================
-   Quick Add — Locations
+   Brokerage Form
+   ============================================================ */
+GN.openBrokerageForm = function(id){
+  if (!GN.session.isOwner || !GN.session.isAdmin){
+    GN.toast(GN.t('readOnlyNotice'), 'bad'); return;
+  }
+
+  var isEdit = !!id;
+  var body = document.getElementById('formModalBody');
+  var titleEl = document.getElementById('formModalTitle');
+  if (!body || !titleEl) return;
+
+  titleEl.textContent = isEdit ? 'تعديل وساطة' : 'وساطة جديدة';
+  body.innerHTML = '<div class="empty"><h4>' + GN.esc(GN.t('loading')) + '</h4></div>';
+  GN.openModal('formModal');
+
+  function buildForm(item, code){
+    item = item || {};
+    code = code || '';
+
+    var banks = GN.dh.list('banks');
+    var bankOpts = '<option value="">— لا يوجد —</option>' + banks.map(function(b){
+      return '<option value="' + GN.escAttr(b.id) + '"' + (item.bank_id === b.id ? ' selected' : '') + '>' + GN.esc(b.name) + '</option>';
+    }).join('');
+
+    var today = new Date().toISOString().slice(0, 10);
+
+    body.innerHTML =
+      '<div class="form-grid">' +
+
+        '<div class="field"><label>الكود</label>' +
+          '<div class="input-wrap"><input type="text" id="bk_code" readonly value="' + GN.escAttr(item.code || code) + '" dir="ltr" style="font-family:monospace;background:var(--bg-alt)"></div></div>' +
+
+        '<div class="field"><label>النوع <span class="req">*</span></label>' +
+          '<div class="input-wrap"><select id="bk_type">' +
+            '<option value="sale"'     + ((item.type || 'sale') === 'sale'     ? ' selected' : '') + '>بيع</option>' +
+            '<option value="purchase"' + (item.type === 'purchase' ? ' selected' : '') + '>شراء</option>' +
+            '<option value="other"'    + (item.type === 'other'    ? ' selected' : '') + '>أخرى</option>' +
+          '</select></div></div>' +
+
+        '<div class="field full"><label>السبب / الوصف <span class="req">*</span></label>' +
+          '<div class="input-wrap"><input type="text" id="bk_reason" maxlength="200" value="' + GN.escAttr(item.reason || '') + '" placeholder="مثال: وساطة بين أحمد ومحمد في بيع 50 جرام"></div></div>' +
+
+        '<div class="field"><label>المبلغ الإجمالي (SDG) <span class="req">*</span></label>' +
+          '<div class="input-wrap"><input type="number" id="bk_amount" step="0.01" min="0" value="' + (item.amount || '') + '"></div></div>' +
+
+        '<div class="field"><label>التاريخ <span class="req">*</span></label>' +
+          '<div class="input-wrap"><input type="date" id="bk_date" value="' + GN.escAttr(item.broker_date || today) + '"></div></div>' +
+
+      '</div>' +
+
+      '<div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--line-2)">' +
+        '<div style="font-weight:800;font-size:13px;margin-bottom:10px;color:var(--gold-d)">عمولة الشركة</div>' +
+        '<div class="form-grid">' +
+          '<div class="field"><label>نوع العمولة</label>' +
+            '<div class="input-wrap"><select id="bk_comm_type">' +
+              '<option value="percent"' + ((item.commission_type || 'percent') === 'percent' ? ' selected' : '') + '>نسبة %</option>' +
+              '<option value="fixed"' + (item.commission_type === 'fixed' ? ' selected' : '') + '>مبلغ ثابت</option>' +
+            '</select></div></div>' +
+          '<div class="field"><label>القيمة <span class="req">*</span></label>' +
+            '<div class="input-wrap"><input type="number" id="bk_comm_value" step="0.01" min="0" value="' + (item.commission_value || '') + '"></div></div>' +
+          '<div class="field full"><label>قيمة العمولة المحسوبة (SDG)</label>' +
+            '<div class="input-wrap"><input type="number" id="bk_comm_amount" readonly style="background:var(--gold-l);color:var(--gold-dd);font-weight:800;font-size:15px"></div></div>' +
+        '</div>' +
+      '</div>' +
+
+      '<div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--line-2)">' +
+        '<div style="font-weight:800;font-size:13px;margin-bottom:10px;color:var(--bad)">الضرائب والرسوم (تُخصم من العمولة)</div>' +
+        '<div class="form-grid">' +
+          '<div class="field"><label>المبلغ (SDG)</label>' +
+            '<div class="input-wrap"><input type="number" id="bk_taxes" step="0.01" min="0" value="' + (item.taxes_fees || 0) + '"></div></div>' +
+          '<div class="field"><label>الوصف</label>' +
+            '<div class="input-wrap"><input type="text" id="bk_taxes_desc" maxlength="100" value="' + GN.escAttr(item.taxes_fees_desc || '') + '" placeholder="مثال: ضريبة تصدير 2%"></div></div>' +
+        '</div>' +
+      '</div>' +
+
+      '<div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--line-2);background:var(--ok-l);border-radius:12px;padding:14px">' +
+        '<div style="text-align:center">' +
+          '<div style="font-size:12px;font-weight:700;color:var(--ok);margin-bottom:4px">صافي ربح الشركة</div>' +
+          '<div style="font-family:\'Reem Kufi\',sans-serif;font-size:24px;font-weight:700;color:var(--ok)" id="bk_net_display">0 SDG</div>' +
+        '</div>' +
+      '</div>' +
+
+      '<div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--line-2)">' +
+        '<div class="form-grid">' +
+          '<div class="field full"><label>الحساب البنكي (اختياري - لتسجيل الحوالة)</label>' +
+            '<div class="input-wrap"><select id="bk_bank">' + bankOpts + '</select></div></div>' +
+          '<div class="field full"><label>مرفق (رابط)</label>' +
+            '<div class="input-wrap"><input type="url" id="bk_attach" dir="ltr" placeholder="https://..." value="' + GN.escAttr(item.attachment_url || '') + '"></div></div>' +
+          '<div class="field full"><label>ملاحظات</label>' +
+            '<div class="input-wrap"><textarea id="bk_notes" rows="2">' + GN.esc(item.notes || '') + '</textarea></div></div>' +
+        '</div>' +
+      '</div>';
+
+    function calc(){
+      var amt = Number(document.getElementById('bk_amount').value) || 0;
+      var ctype = document.getElementById('bk_comm_type').value;
+      var cval = Number(document.getElementById('bk_comm_value').value) || 0;
+      var tax = Number(document.getElementById('bk_taxes').value) || 0;
+
+      var comm = ctype === 'percent' ? (amt * cval / 100) : cval;
+      var net = comm - tax;
+
+      document.getElementById('bk_comm_amount').value = comm.toFixed(2);
+      document.getElementById('bk_net_display').textContent = GN.formatMoneyPlain(net, 'SDG');
+    }
+
+    ['bk_amount','bk_comm_value','bk_taxes'].forEach(function(id){
+      document.getElementById(id).addEventListener('input', calc);
+    });
+    document.getElementById('bk_comm_type').addEventListener('change', calc);
+    calc();
+
+    var submitBtn = document.getElementById('formModalSubmit');
+    submitBtn.textContent = isEdit ? GN.t('saveChanges') : 'حفظ الوساطة';
+    submitBtn.style.display = '';
+    submitBtn.onclick = function(){
+      var type = document.getElementById('bk_type').value;
+      var reason = document.getElementById('bk_reason').value.trim();
+      var amount = Number(document.getElementById('bk_amount').value) || 0;
+      var date = document.getElementById('bk_date').value;
+      var ctype = document.getElementById('bk_comm_type').value;
+      var cval = Number(document.getElementById('bk_comm_value').value) || 0;
+      var tax = Number(document.getElementById('bk_taxes').value) || 0;
+      var taxDesc = document.getElementById('bk_taxes_desc').value.trim();
+      var bankId = document.getElementById('bk_bank').value || '';
+      var bankName = '';
+      if (bankId){
+        var bank = banks.filter(function(b){ return b.id === bankId; })[0];
+        if (bank) bankName = bank.name;
+      }
+
+      if (!reason){ GN.toast('السبب مطلوب', 'bad'); return; }
+      if (!amount || amount <= 0){ GN.toast('المبلغ الإجمالي مطلوب', 'bad'); return; }
+      if (!cval || cval <= 0){ GN.toast('قيمة العمولة مطلوبة', 'bad'); return; }
+
+      var comm = ctype === 'percent' ? (amount * cval / 100) : cval;
+      var net = comm - tax;
+
+      var payload = {
+        code: document.getElementById('bk_code').value,
+        type: type,
+        reason: reason,
+        amount: amount,
+        currency: 'SDG',
+        commission_type: ctype,
+        commission_value: cval,
+        commission_amount: comm,
+        taxes_fees: tax,
+        taxes_fees_desc: taxDesc,
+        net_profit: net,
+        broker_date: date,
+        bank_id: bankId,
+        bank_name: bankName,
+        attachment_url: document.getElementById('bk_attach').value.trim(),
+        notes: document.getElementById('bk_notes').value.trim(),
+        updated_at: new Date().toISOString()
+      };
+
+      submitBtn.disabled = true;
+
+      var promise;
+      if (isEdit){
+        promise = GN.supa.from('gold_brokerages').update(payload).eq('id', id).select();
+      } else {
+        payload.created_by = GN.session.user.id;
+        promise = GN.supa.from('gold_brokerages').insert(payload).select();
+      }
+
+      promise.then(function(res){
+        if (res.error){
+          submitBtn.disabled = false;
+          console.error('[broker]', res.error);
+          GN.toast(res.error.message, 'bad');
+          return;
+        }
+
+        var newId = isEdit ? id : (res.data && res.data[0] ? res.data[0].id : null);
+
+        /* 1) إضافة صافي الربح إلى وعاء أرباح الذهب */
+        var addToProfitPool = function(){
+          return GN.supa.from('fund_pools').select('id,balance').eq('code', 'profit').single().then(function(fr){
+            if (fr.error || !fr.data) return false;
+
+            var pool = fr.data;
+            var newBalance = Number(pool.balance || 0) + net;
+
+            return GN.supa.from('fund_pools').update({
+              balance: newBalance,
+              updated_at: new Date().toISOString()
+            }).eq('id', pool.id).then(function(){
+              /* سجل حركة الوعاء */
+              return GN.supa.from('fund_transactions').insert({
+                pool_id: pool.id,
+                type: 'in',
+                amount: net,
+                currency: 'SDG',
+                reason: 'وساطة ' + (payload.code || '') + ' — ' + reason,
+                reference_type: 'manual',
+                reference_id: newId,
+                notes: 'عمولة ' + GN.formatNum(comm) + ' − ضرائب ' + GN.formatNum(tax),
+                created_by: GN.session.user.id
+              });
+            }).then(function(){
+              return true;
+            });
+          });
+        };
+
+        /* 2) إذا فيه بنك → سجّل حوالة واردة */
+        var addBankTransfer = function(){
+          if (!bankId) return Promise.resolve(false);
+          return GN.addBankTransfer({
+            bank_id: bankId,
+            type: 'in',
+            amount: net,
+            currency: 'SDG',
+            party: 'وساطة ' + (payload.code || ''),
+            notes: reason,
+            source: 'feed_pool',
+            source_id: newId,
+            date: date
+          }).then(function(){ return true; });
+        };
+
+        addToProfitPool().then(function(){
+          addBankTransfer().then(function(){
+            submitBtn.disabled = false;
+            GN.toast(isEdit ? GN.t('savedSuccess') : '✓ تم حفظ الوساطة — ' + GN.formatNum(net) + ' SDG إلى وعاء الأرباح', 'ok');
+
+            GN.notify.send({
+              type: 'add',
+              section: 'cycles',
+              target: 'brokerage',
+              target_id: newId || '',
+              title: (isEdit ? 'تعديل' : 'إضافة') + ' · وساطة',
+              body: payload.code + ' — صافي ' + GN.formatNum(net) + ' SDG'
+            });
+
+            GN.closeModal('formModal');
+            GN.loadCycles();
+          });
+        });
+      });
+    };
+  }
+
+  if (isEdit){
+    GN.supa.from('gold_brokerages').select('*').eq('id', id).single().then(function(res){
+      if (res.error){ GN.toast(res.error.message, 'bad'); GN.closeModal('formModal'); return; }
+      buildForm(res.data, res.data.code);
+    });
+  } else {
+    GN.generateBrokerCode().then(function(code){
+      buildForm(null, code);
+    });
+  }
+};
+
+/* ============================================================
+   Quick Add — Locations & Agents
    ============================================================ */
 GN.quickAddLocation = function(type, parentId, onDone){
-  var titles = {
-    state: 'ولاية جديدة',
-    city: 'مدينة جديدة',
-    place: 'مكان / سوق جديد'
-  };
-  var labels = {
-    state: 'اسم الولاية',
-    city: 'اسم المدينة',
-    place: 'اسم المكان / السوق'
-  };
+  var titles = { state: 'ولاية جديدة', city: 'مدينة جديدة', place: 'مكان / سوق جديد' };
+  var labels = { state: 'اسم الولاية', city: 'اسم المدينة', place: 'اسم المكان / السوق' };
 
   GN.quickAddOverlay(titles[type], [
     { id:'qa_name', label: labels[type], req:true, placeholder:'مثال: الأبيار' }
   ], function(values, closeFn){
     if (!values.qa_name){ GN.toast(GN.t('fieldRequired'), 'bad'); return; }
-
     var payload = { type: type, name: values.qa_name };
     if (parentId) payload.parent_id = parentId;
     if (type === 'state') payload.display_order = 100;
@@ -338,9 +586,6 @@ GN.quickAddLocation = function(type, parentId, onDone){
   });
 };
 
-/* ============================================================
-   Quick Add — Agent
-   ============================================================ */
 GN.quickAddAgent = function(onDone){
   GN.quickAddOverlay('مندوب جديد', [
     { id:'qa_code',       label:'الكود', req:true, dir:'ltr', placeholder:'AG-001' },
@@ -349,25 +594,19 @@ GN.quickAddAgent = function(onDone){
     { id:'qa_buy_pct',    label:'عمولة الشراء %', type:'number', placeholder:'0' },
     { id:'qa_sell_pct',   label:'عمولة البيع %', type:'number', placeholder:'0' },
     { id:'qa_method',     label:'طريقة الدفع', type:'select', options:[
-      { value:'cash', label:'نقدي' },
-      { value:'bank', label:'حوالة بنكية' }
+      { value:'cash', label:'نقدي' }, { value:'bank', label:'حوالة بنكية' }
     ], value:'cash' },
     { id:'qa_bank',       label:'اسم البنك (إن كانت حوالة)' },
     { id:'qa_account',    label:'رقم الحساب (إن كانت حوالة)', dir:'ltr' }
   ], function(v, closeFn){
     if (!v.qa_code || !v.qa_name){ GN.toast(GN.t('fieldRequired'), 'bad'); return; }
-
     var payload = {
-      code: v.qa_code,
-      name: v.qa_name,
-      phone: v.qa_phone || '',
+      code: v.qa_code, name: v.qa_name, phone: v.qa_phone || '',
       buy_commission_pct: Number(v.qa_buy_pct) || 0,
       sell_commission_pct: Number(v.qa_sell_pct) || 0,
       payment_method: v.qa_method || 'cash',
-      bank_name: v.qa_bank || '',
-      account_number: v.qa_account || ''
+      bank_name: v.qa_bank || '', account_number: v.qa_account || ''
     };
-
     GN.supa.from('agents').insert(payload).select().then(function(res){
       if (res.error){ GN.toast(res.error.message, 'bad'); return; }
       GN.toast('تمت الإضافة', 'ok');
@@ -377,9 +616,6 @@ GN.quickAddAgent = function(onDone){
   });
 };
 
-/* ============================================================
-   Generic Quick Add Overlay
-   ============================================================ */
 GN.quickAddOverlay = function(title, fields, onSave){
   var old = document.getElementById('quickAddOverlay');
   if (old) old.remove();
@@ -416,13 +652,10 @@ GN.quickAddOverlay = function(title, fields, onSave){
     '</div>';
 
   document.body.appendChild(overlay);
-
   function closeFn(){ overlay.remove(); }
 
   overlay.querySelector('[data-qa-cancel]').onclick = closeFn;
-  overlay.addEventListener('click', function(e){
-    if (e.target === overlay) closeFn();
-  });
+  overlay.addEventListener('click', function(e){ if (e.target === overlay) closeFn(); });
   overlay.querySelector('[data-qa-save]').onclick = function(){
     var values = {};
     fields.forEach(function(f){
@@ -433,9 +666,6 @@ GN.quickAddOverlay = function(title, fields, onSave){
   };
 };
 
-/* ============================================================
-   Load locations into dropdowns
-   ============================================================ */
 GN.loadLocationsForSelect = function(selectId, type, parentId, selectedId){
   var sel = document.getElementById(selectId);
   if (!sel) return;
@@ -469,7 +699,7 @@ GN.loadAgentsForSelect = function(selectId, selectedId){
 };
 
 /* ============================================================
-   Open Cycle Form
+   Cycle Form (regular buy/sell cycle)
    ============================================================ */
 GN.openCycleForm = function(id){
   if (!GN.session.isOwner || !GN.session.isAdmin){
@@ -496,23 +726,18 @@ GN.openCycleForm = function(id){
     body.innerHTML =
       '<div class="form-grid">' +
 
-        /* Code (readonly) */
         '<div class="field"><label>' + GN.esc(GN.t('cycleCode')) + '</label>' +
           '<div class="input-wrap"><input type="text" id="cy_code" readonly value="' + GN.escAttr(item.code || code) + '" dir="ltr" style="font-family:monospace;background:var(--bg-alt)"></div></div>' +
 
-        /* Target days */
         '<div class="field"><label>' + GN.esc(GN.t('cycleTargetDays') || 'المدة المستهدفة (أيام)') + ' <span class="req">*</span></label>' +
           '<div class="input-wrap"><input type="number" id="cy_target_days" min="1" max="365" value="' + (item.target_days || 3) + '"></div></div>' +
 
-        /* Date */
         '<div class="field"><label>' + GN.esc(GN.t('cycleStartDate') || 'تاريخ البداية') + ' <span class="req">*</span></label>' +
           '<div class="input-wrap"><input type="date" id="cy_date" value="' + GN.escAttr(item.start_date ? item.start_date.slice(0,10) : todayDate) + '"></div></div>' +
 
-        /* Time */
         '<div class="field"><label>' + GN.esc(GN.t('cycleStartTime') || 'وقت البداية') + '</label>' +
           '<div class="input-wrap"><input type="time" id="cy_time" value="' + GN.escAttr(item.start_date ? item.start_date.slice(11,16) : nowTime) + '"></div></div>' +
 
-        /* Karat */
         '<div class="field"><label>' + GN.esc(GN.t('cycleKarat')) + ' <span class="req">*</span></label>' +
           '<div class="input-wrap"><select id="cy_karat">' +
             '<option value="18"' + (item.karat === '18' ? ' selected' : '') + '>18</option>' +
@@ -521,21 +746,17 @@ GN.openCycleForm = function(id){
             '<option value="24"' + (item.karat === '24' ? ' selected' : '') + '>24</option>' +
           '</select></div></div>' +
 
-        /* Quantity */
         '<div class="field"><label>' + GN.esc(GN.t('cycleQuantity')) + ' (g) <span class="req">*</span></label>' +
           '<div class="input-wrap"><input type="number" id="cy_quantity" step="0.001" min="0" value="' + (item.quantity_grams || '') + '"></div></div>' +
 
-        /* Purchase price per gram */
         '<div class="field"><label>' + GN.esc(GN.t('cyclePurchasePrice') || 'سعر الشراء/جرام') + ' (SDG) <span class="req">*</span></label>' +
           '<div class="input-wrap"><input type="number" id="cy_ppg" step="0.01" min="0" value="' + (item.purchase_price_per_gram || '') + '"></div></div>' +
 
-        /* Purchase total (readonly) */
         '<div class="field"><label>' + GN.esc(GN.t('cyclePurchaseTotal') || 'إجمالي الشراء') + '</label>' +
           '<div class="input-wrap"><input type="number" id="cy_purchase_total" readonly style="background:var(--bg-alt);font-weight:700" value=""></div></div>' +
 
       '</div>' +
 
-      /* ============ Location Section ============ */
       '<div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--line-2)">' +
         '<div style="font-weight:800;font-size:13px;margin-bottom:10px;color:var(--ink-2)">' + GN.esc(GN.t('cycleLocationSection') || 'موقع الشراء') + '</div>' +
         '<div class="form-grid">' +
@@ -557,7 +778,6 @@ GN.openCycleForm = function(id){
         '</div>' +
       '</div>' +
 
-      /* ============ Agent Section ============ */
       '<div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--line-2)">' +
         '<div style="font-weight:800;font-size:13px;margin-bottom:10px;color:var(--ink-2)">' + GN.esc(GN.t('cycleAgentSection') || 'المندوب') + ' (اختياري)</div>' +
         '<div class="form-grid">' +
@@ -571,7 +791,6 @@ GN.openCycleForm = function(id){
         '</div>' +
       '</div>' +
 
-      /* ============ Tax & Fee Section ============ */
       '<div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--line-2)">' +
         '<div style="font-weight:800;font-size:13px;margin-bottom:10px;color:var(--ink-2)">' + GN.esc(GN.t('cycleTaxSection') || 'الضريبة والرسوم') + '</div>' +
         '<div class="form-grid">' +
@@ -590,7 +809,6 @@ GN.openCycleForm = function(id){
         '</div>' +
       '</div>' +
 
-      /* ============ Attachment + Notes ============ */
       '<div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--line-2)">' +
         '<div class="form-grid">' +
           '<div class="field full"><label>' + GN.esc(GN.t('cycleAttachment') || 'مرفق (رابط)') + '</label>' +
@@ -600,7 +818,6 @@ GN.openCycleForm = function(id){
         '</div>' +
       '</div>';
 
-    /* Wire up calculations */
     function calc(){
       var qty = Number(document.getElementById('cy_quantity').value) || 0;
       var ppg = Number(document.getElementById('cy_ppg').value) || 0;
@@ -611,15 +828,11 @@ GN.openCycleForm = function(id){
     document.getElementById('cy_ppg').addEventListener('input', calc);
     calc();
 
-    /* Load locations */
     GN.loadLocationsForSelect('cy_state', 'state', null, item.purchase_state_id);
     if (item.purchase_state_id) GN.loadLocationsForSelect('cy_city', 'city', item.purchase_state_id, item.purchase_city_id);
     if (item.purchase_city_id) GN.loadLocationsForSelect('cy_place', 'place', item.purchase_city_id, item.purchase_place_id);
-
-    /* Load agents */
     GN.loadAgentsForSelect('cy_agent', item.purchase_agent_id);
 
-    /* Agent change → auto fill commission */
     var agentSel = document.getElementById('cy_agent');
     if (agentSel) agentSel.addEventListener('change', function(){
       var opt = agentSel.options[agentSel.selectedIndex];
@@ -627,20 +840,17 @@ GN.openCycleForm = function(id){
       if (pct) document.getElementById('cy_agent_pct').value = pct;
     });
 
-    /* State change → load cities */
     var stateSel = document.getElementById('cy_state');
     if (stateSel) stateSel.addEventListener('change', function(){
       GN.loadLocationsForSelect('cy_city', 'city', stateSel.value, null);
       document.getElementById('cy_place').innerHTML = '<option value="">—</option>';
     });
 
-    /* City change → load places */
     var citySel = document.getElementById('cy_city');
     if (citySel) citySel.addEventListener('change', function(){
       GN.loadLocationsForSelect('cy_place', 'place', citySel.value, null);
     });
 
-    /* Quick add buttons */
     body.querySelectorAll('[data-cy-quick]').forEach(function(b){
       b.addEventListener('click', function(){
         var what = b.getAttribute('data-cy-quick');
@@ -670,9 +880,9 @@ GN.openCycleForm = function(id){
       });
     });
 
-    /* Save button */
     var submitBtn = document.getElementById('formModalSubmit');
     submitBtn.textContent = isEdit ? GN.t('saveChanges') : GN.t('save');
+    submitBtn.style.display = '';
     submitBtn.onclick = function(){
       var qty = Number(document.getElementById('cy_quantity').value) || 0;
       var ppg = Number(document.getElementById('cy_ppg').value) || 0;
@@ -701,33 +911,26 @@ GN.openCycleForm = function(id){
         status: 'open',
         start_date: startISO,
         target_days: targetDays,
-
         karat: document.getElementById('cy_karat').value,
         quantity_grams: qty,
         purchase_price_per_gram: ppg,
         purchase_total: total,
-
         purchase_state_id: document.getElementById('cy_state').value || null,
         purchase_city_id:  document.getElementById('cy_city').value || null,
         purchase_place_id: document.getElementById('cy_place').value || null,
-
         purchase_agent_id: agentId,
         purchase_commission_pct: agentPct,
         purchase_commission_amount: commissionAmount,
-
         purchase_tax_type: taxType,
         purchase_tax_value: taxValue,
         purchase_tax_amount: taxAmount,
         purchase_fee_amount: Number(document.getElementById('cy_fee').value) || 0,
         purchase_fee_desc: document.getElementById('cy_fee_desc').value.trim(),
-
         attachment_url: document.getElementById('cy_attach').value.trim(),
         notes: document.getElementById('cy_notes').value.trim(),
-
         remaining_grams: qty,
         sold_grams: 0,
         transferred_grams: 0,
-
         created_by: GN.session.user ? GN.session.user.id : null
       };
 
@@ -736,9 +939,9 @@ GN.openCycleForm = function(id){
       var promise;
       if (isEdit){
         payload.updated_at = new Date().toISOString();
-        promise = GN.supa.from('gold_cycles').update(payload).eq('id', id);
+        promise = GN.supa.from('gold_cycles').update(payload).eq('id', id).select();
       } else {
-        promise = GN.supa.from('gold_cycles').insert(payload);
+        promise = GN.supa.from('gold_cycles').insert(payload).select();
       }
 
       promise.then(function(res){
@@ -748,25 +951,65 @@ GN.openCycleForm = function(id){
           GN.toast(res.error.message, 'bad');
           return;
         }
+
+        var newId = isEdit ? id : (res.data && res.data[0] ? res.data[0].id : null);
         GN.toast(isEdit ? GN.t('savedSuccess') : 'تم إنشاء الدورة', 'ok');
 
-        /* Notification */
-        GN.notify.send({
-          type: 'add',
-          section: 'cycles',
-          target: 'cycle',
-          target_id: isEdit ? id : '',
-          title: (isEdit ? 'تعديل' : 'إضافة') + ' · دورات الذهب',
-          body: payload.code + ' — ' + GN.formatNum(qty, 2) + 'g × ' + GN.formatNum(ppg, 2)
-        });
+        if (!isEdit && agentId && commissionAmount > 0){
+          GN.supa.from('agents').select('id,code,name,phone,bank_name,account_number,payment_method').eq('id', agentId).single().then(function(aRes){
+            if (aRes.error || !aRes.data){
+              finishCycleSave();
+              return;
+            }
+            var agent = aRes.data;
+            var p = GN.session.profile;
+            var payCode = 'PAY-' + new Date().getFullYear() + '-' + String(Date.now()).slice(-4);
 
-        GN.closeModal('formModal');
-        GN.loadCycles();
+            GN.supa.from('payment_orders').insert({
+              code: payCode,
+              type: 'agent',
+              beneficiary_name: agent.name || '',
+              beneficiary_bank: agent.bank_name || '',
+              beneficiary_account: agent.account_number || '',
+              beneficiary_phone: agent.phone || '',
+              payment_method: agent.payment_method || 'cash',
+              amount: commissionAmount,
+              currency: 'SDG',
+              amount_sdg: commissionAmount,
+              due_date: null,
+              status: 'pending',
+              linked_source: 'gold_purchase',
+              linked_id: newId || '',
+              linked_desc: payload.code || '',
+              notes: 'عمولة مندوب شراء — ' + (payload.code || ''),
+              created_by: GN.session.user.id,
+              created_by_name: (p && (p.full_name || p.email)) || ''
+            }).then(function(){
+              GN.toast('✓ تم إنشاء استحقاق المندوب تلقائيًا', 'ok');
+              finishCycleSave();
+            });
+          });
+        } else {
+          finishCycleSave();
+        }
+
+        function finishCycleSave(){
+          GN.notify.send({
+            type: 'add',
+            section: 'cycles',
+            target: 'cycle',
+            target_id: newId || '',
+            title: (isEdit ? 'تعديل' : 'إضافة') + ' · دورات الذهب',
+            body: payload.code + ' — ' + GN.formatNum(qty, 2) + 'g × ' + GN.formatNum(ppg, 2)
+          });
+
+          GN.closeModal('formModal');
+          GN.loadCycles();
+        }
       });
     };
   }
 
-  /* Load existing or generate new code */
   if (isEdit){
     GN.supa.from('gold_cycles').select('*').eq('id', id).single().then(function(res){
       if (res.error){ GN.toast(res.error.message, 'bad'); GN.closeModal('formModal'); return; }
@@ -780,103 +1023,7 @@ GN.openCycleForm = function(id){
 };
 
 /* ============================================================
-   Delete Cycle
-   ============================================================ */
-GN.deleteCycle = function(id){
-  if (!GN.session.isOwner){ GN.toast(GN.t('readOnlyNotice'), 'bad'); return; }
-  GN.confirm({
-    title: GN.t('delete'),
-    text: 'حذف هذه الدورة؟ سيتم حذف بيعاتها الجزئية أيضًا.',
-    okText: GN.t('delete'),
-    cancelText: GN.t('cancel'),
-    danger: true
-  }).then(function(ok){
-    if (!ok) return;
-    GN.supa.from('gold_cycles').delete().eq('id', id).then(function(res){
-      if (res.error){ GN.toast(res.error.message, 'bad'); return; }
-      GN.notify.markDeleted('cycles', 'cycle', id);
-      GN.toast(GN.t('deletedSuccess'), 'ok');
-      GN.loadCycles();
-    });
-  });
-};
-
-/* ============================================================
-   Bind Section
-   ============================================================ */
-GN.bindSection.cycles = function(){
-  GN.bindAction('cycle-add', function(){
-    if (!GN.session.isOwner || !GN.session.isAdmin){
-      GN.toast(GN.t('readOnlyNotice'), 'bad'); return;
-    }
-    GN.openCycleForm(null);
-  });
-
-  GN.bindAction('cycles-apply', function(){
-    GN.readCyclesFilters();
-    GN.loadCycles();
-  });
-
-  GN.bindAction('cycles-clear', function(){
-    GN.clearCyclesFilters();
-  });
-};
-/* ============================================================
-   Phase 2B-3 — Cycle Details + Partial Sale + Transfer + Realize
-   ============================================================ */
-
-/* ============================================================
-   Recalculate cycle totals after sales/transfers
-   ============================================================ */
-GN.recalcCycleTotals = function(cycleId){
-  return Promise.all([
-    GN.supa.from('gold_cycle_sales').select('quantity_grams').eq('cycle_id', cycleId),
-    GN.supa.from('gold_cycles').select('quantity_grams,transferred_grams').eq('id', cycleId).single()
-  ]).then(function(results){
-    var salesRes = results[0];
-    var cycleRes = results[1];
-    if (salesRes.error || cycleRes.error){
-      console.error('[recalc]', salesRes.error || cycleRes.error);
-      return null;
-    }
-    var sold = (salesRes.data || []).reduce(function(s, x){ return s + Number(x.quantity_grams || 0); }, 0);
-    var total = Number(cycleRes.data.quantity_grams || 0);
-    var transferred = Number(cycleRes.data.transferred_grams || 0);
-    var remaining = Math.max(0, total - sold - transferred);
-
-    var status = cycleRes.data.status;
-    if (remaining <= 0 && transferred > 0) status = 'transferred';
-    else if (remaining <= 0) status = 'closed';
-    else if (sold > 0) status = 'partial';
-    else status = 'open';
-
-    var update = {
-      sold_grams: sold,
-      remaining_grams: remaining,
-      status: status,
-      updated_at: new Date().toISOString()
-    };
-
-    if (remaining <= 0 && (status === 'closed' || status === 'transferred')){
-      var cycle = cycleRes.data;
-      GN.supa.from('gold_cycles').select('start_date').eq('id', cycleId).single().then(function(r){
-        if (!r.error && r.data && r.data.start_date){
-          var days = Math.ceil((Date.now() - new Date(r.data.start_date).getTime()) / 86400000);
-          update.end_date = new Date().toISOString();
-          update.actual_days = days;
-          GN.supa.from('gold_cycles').update(update).eq('id', cycleId);
-        }
-      });
-    } else {
-      GN.supa.from('gold_cycles').update(update).eq('id', cycleId);
-    }
-
-    return update;
-  });
-};
-
-/* ============================================================
-   Cycle Details Modal
+   Cycle Details
    ============================================================ */
 GN.viewCycleDetails = function(id){
   var overlay = document.getElementById('cycleDetailsOverlay');
@@ -904,7 +1051,6 @@ GN.viewCycleDetails = function(id){
   overlay.querySelector('[data-cd-close]').onclick = closeFn;
   overlay.addEventListener('click', function(e){ if (e.target === overlay) closeFn(); });
 
-  /* Load data */
   Promise.all([
     GN.supa.from('gold_cycles').select('*').eq('id', id).single(),
     GN.supa.from('gold_cycle_sales').select('*').eq('cycle_id', id).order('sale_date', { ascending: false })
@@ -923,19 +1069,16 @@ GN.renderCycleDetails = function(c, sales, overlay, closeFn){
   var title = document.getElementById('cdTitle');
   if (title) title.textContent = c.code + ' — ' + GN.t('cyclesTitle');
 
-  /* Status label */
   var statusLbl, statusCls;
   if (c.status === 'open'){ statusLbl = GN.t('cycleOpen'); statusCls = 'n'; }
   else if (c.status === 'partial'){ statusLbl = GN.t('cyclePartial'); statusCls = 'w'; }
   else if (c.status === 'closed'){ statusLbl = GN.t('cycleClosed'); statusCls = 'ok'; }
   else { statusLbl = GN.t('cycleTransferred'); statusCls = 'ok'; }
 
-  /* Days calc */
   var startD = new Date(c.start_date);
   var endD = c.end_date ? new Date(c.end_date) : new Date();
   var days = Math.ceil((endD - startD) / 86400000);
 
-  /* Sales totals */
   var totalSoldG = 0, totalSaleRevenue = 0, totalCostBasis = 0;
   var totalSaleCommission = 0, totalSaleTax = 0, totalSaleFee = 0;
   var totalNetProfit = 0, totalRealized = 0, totalPending = 0;
@@ -952,7 +1095,6 @@ GN.renderCycleDetails = function(c, sales, overlay, closeFn){
     else totalPending += Number(s.net_profit || 0);
   });
 
-  /* Build HTML */
   var rowsInfo = [
     ['الحالة', '<span class="chip ' + statusCls + '"><span class="dot"></span>' + GN.esc(statusLbl) + '</span>'],
     ['تاريخ البداية', GN.formatDate(c.start_date) + ' — ' + (c.start_date || '').slice(11,16)],
@@ -972,14 +1114,12 @@ GN.renderCycleDetails = function(c, sales, overlay, closeFn){
 
   var html = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin-bottom:16px">';
 
-  /* Info card */
   html += '<div class="card" style="margin:0"><div class="card-head"><h3>' + GN.navIcon('gold') + ' بيانات الدورة</h3></div><table style="width:100%;font-size:12.5px">';
   rowsInfo.forEach(function(r){
     html += '<tr><td style="padding:6px 0;color:var(--ink-2);font-weight:700">' + r[0] + '</td><td style="padding:6px 0;text-align:end">' + r[1] + '</td></tr>';
   });
   html += '</table></div>';
 
-  /* Profit card */
   var netProfitColor = totalNetProfit >= 0 ? 'var(--ok)' : 'var(--bad)';
   html += '<div class="card" style="margin:0"><div class="card-head"><h3>' + GN.navIcon('dollar') + ' الأرباح</h3></div><table style="width:100%;font-size:12.5px">';
   html += '<tr><td style="padding:6px 0;color:var(--ink-2);font-weight:700">إجمالي المبيعات</td><td style="padding:6px 0;text-align:end">' + GN.formatMoneyPlain(totalSaleRevenue, 'SDG') + '</td></tr>';
@@ -994,7 +1134,6 @@ GN.renderCycleDetails = function(c, sales, overlay, closeFn){
 
   html += '</div>';
 
-  /* Notes / attachment */
   if (c.notes || c.attachment_url){
     html += '<div class="card"><div class="card-head"><h3>' + GN.navIcon('file') + ' ملاحظات ومرفقات</h3></div>';
     if (c.notes) html += '<p style="font-size:13px;line-height:1.8;margin-bottom:10px">' + GN.esc(c.notes) + '</p>';
@@ -1002,21 +1141,14 @@ GN.renderCycleDetails = function(c, sales, overlay, closeFn){
     html += '</div>';
   }
 
-  /* Sales list */
   html += '<div class="card"><div class="card-head"><h3>' + GN.navIcon('dollar') + ' البيعات الجزئية (' + sales.length + ')</h3></div>';
 
   if (!sales.length){
     html += '<div class="empty"><div class="ic">' + GN.navIcon('dollar') + '</div><h4>لا توجد بيعات جزئية بعد</h4></div>';
   } else {
     html += '<div class="table-wrap"><table><thead><tr>' +
-      '<th>التاريخ</th>' +
-      '<th>الكمية</th>' +
-      '<th>سعر البيع/g</th>' +
-      '<th>الإجمالي</th>' +
-      '<th>العمولة</th>' +
-      '<th>الضريبة+الرسوم</th>' +
-      '<th>صافي الربح</th>' +
-      '<th>الحالة</th>' +
+      '<th>التاريخ</th><th>الكمية</th><th>سعر البيع/g</th><th>الإجمالي</th>' +
+      '<th>العمولة</th><th>الضريبة+الرسوم</th><th>صافي الربح</th><th>الحالة</th>' +
       (isAdmin ? '<th></th>' : '') +
     '</tr></thead><tbody>';
 
@@ -1037,7 +1169,7 @@ GN.renderCycleDetails = function(c, sales, overlay, closeFn){
         '<td>' + statusBadge + '</td>' +
         (isAdmin ? '<td class="actions"><div class="row-actions">' +
           (s.profit_status === 'pending'
-            ? '<button class="icon-act" data-sale-act="realize" data-sale-id="' + GN.escAttr(s.id) + '" title="تحقيق الربح (تسجيل الحوالة)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg></button>'
+            ? '<button class="icon-act" data-sale-act="realize" data-sale-id="' + GN.escAttr(s.id) + '" title="تحقيق الربح"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg></button>'
             : '') +
           '<button class="icon-act del" data-sale-act="del" data-sale-id="' + GN.escAttr(s.id) + '" data-cycle-id="' + GN.escAttr(c.id) + '" title="حذف"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M8 6V4h8v2M6 6v14a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V6"/></svg></button>' +
         '</div></td>' : '') +
@@ -1050,18 +1182,21 @@ GN.renderCycleDetails = function(c, sales, overlay, closeFn){
   var bodyEl = document.getElementById('cdBody');
   if (bodyEl) bodyEl.innerHTML = html;
 
-  /* Footer buttons */
   var footEl = document.getElementById('cdFoot');
   var canAddSale = isAdmin && Number(c.remaining_grams) > 0 && (c.status === 'open' || c.status === 'partial');
+  var canFullSale = isAdmin && Number(c.remaining_grams) > 0 && (c.status === 'open' || c.status === 'partial');
   var canTransfer = isAdmin && Number(c.remaining_grams) > 0;
   var canEdit = isAdmin;
 
   var footHTML = '';
+  if (canFullSale){
+    footHTML += '<button class="btn btn-gold" data-cd-full-sale><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg> بيع الكامل (' + GN.formatNum(c.remaining_grams, 2) + 'g)</button>';
+  }
   if (canAddSale){
     footHTML += '<button class="btn btn-pri" data-cd-sale><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg> بيع جزء</button>';
   }
   if (canTransfer){
-    footHTML += '<button class="btn btn-gold" data-cd-transfer><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 8 12 3 3 8v8l9 5 9-5V8Z"/><path d="M3 8l9 5 9-5"/></svg> ترحيل المتبقي للمخزون</button>';
+    footHTML += '<button class="btn btn-sec" data-cd-transfer><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 8 12 3 3 8v8l9 5 9-5V8Z"/><path d="M3 8l9 5 9-5"/></svg> ترحيل المتبقي للمخزون</button>';
   }
   if (canEdit){
     footHTML += '<button class="btn btn-sec" data-cd-edit>' + GN.t('edit') + '</button>';
@@ -1069,26 +1204,47 @@ GN.renderCycleDetails = function(c, sales, overlay, closeFn){
   footHTML += '<button class="btn btn-sec" data-cd-close2>' + GN.t('close') + '</button>';
   if (footEl) footEl.innerHTML = footHTML;
 
-  /* Wire footer buttons */
   var body = overlay;
   body.querySelectorAll('[data-cd-close2]').forEach(function(b){ b.onclick = closeFn; });
   body.querySelectorAll('[data-cd-sale]').forEach(function(b){
-    b.onclick = function(){ GN.openPartialSaleForm(c, closeFn); };
+    b.onclick = function(){
+      closeFn();
+      setTimeout(function(){ GN.openPartialSaleForm(c, null); }, 150);
+    };
+  });
+  body.querySelectorAll('[data-cd-full-sale]').forEach(function(b){
+    b.onclick = function(){
+      closeFn();
+      setTimeout(function(){ GN.openPartialSaleForm(c, null, true); }, 150);
+    };
   });
   body.querySelectorAll('[data-cd-transfer]').forEach(function(b){
-    b.onclick = function(){ GN.transferCycleToInventory(c, closeFn); };
+    b.onclick = function(){
+      closeFn();
+      setTimeout(function(){ GN.transferCycleToInventory(c, null); }, 150);
+    };
   });
   body.querySelectorAll('[data-cd-edit]').forEach(function(b){
-    b.onclick = function(){ closeFn(); GN.openCycleForm(c.id); };
+    b.onclick = function(){
+      closeFn();
+      setTimeout(function(){ GN.openCycleForm(c.id); }, 150);
+    };
   });
 
-  /* Wire sale row actions */
   body.querySelectorAll('[data-sale-act]').forEach(function(b){
     b.onclick = function(){
       var act = b.getAttribute('data-sale-act');
       var sid = b.getAttribute('data-sale-id');
-      if (act === 'realize'){ GN.realizeProfit(sid, c.id, closeFn); }
-      else if (act === 'del'){ GN.deleteCycleSale(sid, c.id, closeFn); }
+      if (act === 'realize'){
+        closeFn();
+        setTimeout(function(){ GN.realizeProfit(sid, c.id, null); }, 150);
+      }
+      else if (act === 'del'){
+        GN.deleteCycleSale(sid, c.id, function(){
+          closeFn();
+          setTimeout(function(){ GN.viewCycleDetails(c.id); }, 150);
+        });
+      }
     };
   });
 };
@@ -1096,14 +1252,16 @@ GN.renderCycleDetails = function(c, sales, overlay, closeFn){
 /* ============================================================
    Partial Sale Form
    ============================================================ */
-GN.openPartialSaleForm = function(cycle, onSuccess){
+GN.openPartialSaleForm = function(cycle, onSuccess, isFullSale){
   if (!GN.session.isOwner || !GN.session.isAdmin){ GN.toast(GN.t('readOnlyNotice'), 'bad'); return; }
 
   var body = document.getElementById('formModalBody');
   var titleEl = document.getElementById('formModalTitle');
   if (!body || !titleEl) return;
 
-  titleEl.textContent = 'بيع جزء من الدورة ' + (cycle.code || '');
+  titleEl.textContent = isFullSale
+    ? 'بيع الكامل — ' + (cycle.code || '')
+    : 'بيع جزء من الدورة ' + (cycle.code || '');
 
   var maxG = Number(cycle.remaining_grams || 0);
   var now = new Date();
@@ -1124,7 +1282,7 @@ GN.openPartialSaleForm = function(cycle, onSuccess){
         '<div class="input-wrap"><input type="time" id="ps_time" value="' + nowTime + '"></div></div>' +
 
       '<div class="field"><label>الكمية (g) <span class="req">*</span></label>' +
-        '<div class="input-wrap"><input type="number" id="ps_qty" step="0.001" min="0.001" max="' + maxG + '" value="' + maxG + '"></div></div>' +
+        '<div class="input-wrap"><input type="number" id="ps_qty" step="0.001" min="0.001" max="' + maxG + '" value="' + maxG + '"' + (isFullSale ? ' readonly style="background:var(--bg-alt);font-weight:800"' : '') + '></div></div>' +
 
       '<div class="field"><label>سعر البيع/جرام (SDG) <span class="req">*</span></label>' +
         '<div class="input-wrap"><input type="number" id="ps_ppg" step="0.01" min="0"></div></div>' +
@@ -1134,7 +1292,6 @@ GN.openPartialSaleForm = function(cycle, onSuccess){
 
     '</div>' +
 
-    /* Location */
     '<div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--line-2)">' +
       '<div style="font-weight:800;font-size:13px;margin-bottom:10px;color:var(--ink-2)">موقع البيع</div>' +
       '<div class="form-grid">' +
@@ -1144,7 +1301,6 @@ GN.openPartialSaleForm = function(cycle, onSuccess){
       '</div>' +
     '</div>' +
 
-    /* Agent */
     '<div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--line-2)">' +
       '<div style="font-weight:800;font-size:13px;margin-bottom:10px;color:var(--ink-2)">المندوب (اختياري)</div>' +
       '<div class="form-grid">' +
@@ -1153,7 +1309,6 @@ GN.openPartialSaleForm = function(cycle, onSuccess){
       '</div>' +
     '</div>' +
 
-    /* Tax & Fee */
     '<div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--line-2)">' +
       '<div style="font-weight:800;font-size:13px;margin-bottom:10px;color:var(--ink-2)">الضريبة والرسوم</div>' +
       '<div class="form-grid">' +
@@ -1169,7 +1324,6 @@ GN.openPartialSaleForm = function(cycle, onSuccess){
       '</div>' +
     '</div>' +
 
-    /* Summary */
     '<div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--line-2)">' +
       '<div class="form-grid">' +
         '<div class="field"><label>تكلفة البضاعة</label><div class="input-wrap"><input type="number" id="ps_cost" readonly style="background:var(--bg-alt)"></div></div>' +
@@ -1178,7 +1332,6 @@ GN.openPartialSaleForm = function(cycle, onSuccess){
       '</div>' +
     '</div>' +
 
-    /* Meta */
     '<div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--line-2)">' +
       '<div class="form-grid">' +
         '<div class="field full"><label>مرفق (رابط)</label><div class="input-wrap"><input type="url" id="ps_attach" dir="ltr" placeholder="https://..."></div></div>' +
@@ -1186,13 +1339,11 @@ GN.openPartialSaleForm = function(cycle, onSuccess){
       '</div>' +
     '</div>';
 
-  /* Load locations + agents */
   GN.loadLocationsForSelect('ps_state', 'state', null, cycle.purchase_state_id);
   GN.loadAgentsForSelect('ps_agent', null);
   if (cycle.purchase_state_id) GN.loadLocationsForSelect('ps_city', 'city', cycle.purchase_state_id, cycle.purchase_city_id);
   if (cycle.purchase_city_id) GN.loadLocationsForSelect('ps_place', 'place', cycle.purchase_city_id, cycle.purchase_place_id);
 
-  /* Cascade state→city→place */
   document.getElementById('ps_state').addEventListener('change', function(){
     GN.loadLocationsForSelect('ps_city', 'city', this.value, null);
     document.getElementById('ps_place').innerHTML = '<option value="">—</option>';
@@ -1200,15 +1351,12 @@ GN.openPartialSaleForm = function(cycle, onSuccess){
   document.getElementById('ps_city').addEventListener('change', function(){
     GN.loadLocationsForSelect('ps_place', 'place', this.value, null);
   });
-
-  /* Agent auto commission */
   document.getElementById('ps_agent').addEventListener('change', function(){
     var opt = this.options[this.selectedIndex];
     var pct = opt.getAttribute('data-sell-pct');
     if (pct) document.getElementById('ps_agent_pct').value = pct;
   });
 
-  /* Calculations */
   function recalc(){
     var qty = Number(document.getElementById('ps_qty').value) || 0;
     var ppg = Number(document.getElementById('ps_ppg').value) || 0;
@@ -1242,9 +1390,9 @@ GN.openPartialSaleForm = function(cycle, onSuccess){
   document.getElementById('ps_tax_type').addEventListener('change', recalc);
   recalc();
 
-  /* Submit */
   var submitBtn = document.getElementById('formModalSubmit');
   submitBtn.textContent = 'حفظ البيع';
+  submitBtn.style.display = '';
   submitBtn.onclick = function(){
     var qty = Number(document.getElementById('ps_qty').value) || 0;
     var ppg = Number(document.getElementById('ps_ppg').value) || 0;
@@ -1296,36 +1444,119 @@ GN.openPartialSaleForm = function(cycle, onSuccess){
 
     submitBtn.disabled = true;
     GN.supa.from('gold_cycle_sales').insert(payload).select().then(function(res){
-      submitBtn.disabled = false;
-      if (res.error){ GN.toast(res.error.message, 'bad'); console.error(res.error); return; }
+      if (res.error){ submitBtn.disabled = false; GN.toast(res.error.message, 'bad'); console.error(res.error); return; }
 
-      GN.toast('تم تسجيل البيع — الربح معلق', 'ok');
-      GN.notify.send({
-        type: 'edit',
-        section: 'cycles',
-        target: 'cycle',
-        target_id: cycle.id,
-        title: 'بيع جزئي · ' + cycle.code,
-        body: GN.formatNum(qty, 2) + 'g × ' + GN.formatNum(ppg, 2) + ' = ' + GN.formatNum(total, 2) + ' SDG'
-      });
+      var newSaleId = res.data && res.data[0] ? res.data[0].id : null;
 
-      GN.recalcCycleTotals(cycle.id).then(function(){
-        GN.closeModal('formModal');
-        if (onSuccess) onSuccess();
-        else GN.loadCycles();
-      });
+      var createAgentPayable = function(){
+        if (!agentId || commissionAmount <= 0){ finalize(); return; }
+        GN.supa.from('agents').select('id,code,name,phone,bank_name,account_number,payment_method').eq('id', agentId).single().then(function(aRes){
+          if (aRes.error || !aRes.data){ finalize(); return; }
+          var agent = aRes.data;
+          var p = GN.session.profile;
+          var payCode = 'PAY-' + new Date().getFullYear() + '-' + String(Date.now()).slice(-4);
+
+          GN.supa.from('payment_orders').insert({
+            code: payCode,
+            type: 'agent',
+            beneficiary_name: agent.name || '',
+            beneficiary_bank: agent.bank_name || '',
+            beneficiary_account: agent.account_number || '',
+            beneficiary_phone: agent.phone || '',
+            payment_method: agent.payment_method || 'cash',
+            amount: commissionAmount,
+            currency: 'SDG',
+            amount_sdg: commissionAmount,
+            due_date: null,
+            status: 'pending',
+            linked_source: 'gold_sale',
+            linked_id: newSaleId || '',
+            linked_desc: cycle.code || '',
+            notes: 'عمولة مندوب بيع — ' + (cycle.code || ''),
+            created_by: GN.session.user.id,
+            created_by_name: (p && (p.full_name || p.email)) || ''
+          }).then(function(){
+            GN.toast('✓ تم إنشاء استحقاق المندوب تلقائيًا', 'ok');
+            finalize();
+          });
+        });
+      };
+
+      var finalize = function(){
+        submitBtn.disabled = false;
+        GN.toast('تم تسجيل البيع — الربح معلق', 'ok');
+        GN.notify.send({
+          type: 'edit',
+          section: 'cycles',
+          target: 'cycle',
+          target_id: cycle.id,
+          title: 'بيع جزئي · ' + cycle.code,
+          body: GN.formatNum(qty, 2) + 'g × ' + GN.formatNum(ppg, 2) + ' = ' + GN.formatNum(total, 2) + ' SDG'
+        });
+
+        GN.recalcCycleTotals(cycle.id).then(function(){
+          GN.closeModal('formModal');
+          if (onSuccess) onSuccess();
+          else GN.loadCycles();
+        });
+      };
+
+      createAgentPayable();
     });
   };
 
-  /* Show modal */
-  var sub = document.getElementById('formModalSubmit');
-  if (sub) sub.style.display = '';
   GN.openModal('formModal');
 };
 
 /* ============================================================
-   Transfer remaining to inventory
+   Recalc + Transfer + Realize + Delete
    ============================================================ */
+GN.recalcCycleTotals = function(cycleId){
+  return Promise.all([
+    GN.supa.from('gold_cycle_sales').select('quantity_grams').eq('cycle_id', cycleId),
+    GN.supa.from('gold_cycles').select('quantity_grams,transferred_grams').eq('id', cycleId).single()
+  ]).then(function(results){
+    var salesRes = results[0];
+    var cycleRes = results[1];
+    if (salesRes.error || cycleRes.error){
+      console.error('[recalc]', salesRes.error || cycleRes.error);
+      return null;
+    }
+    var sold = (salesRes.data || []).reduce(function(s, x){ return s + Number(x.quantity_grams || 0); }, 0);
+    var total = Number(cycleRes.data.quantity_grams || 0);
+    var transferred = Number(cycleRes.data.transferred_grams || 0);
+    var remaining = Math.max(0, total - sold - transferred);
+
+    var status = cycleRes.data.status;
+    if (remaining <= 0 && transferred > 0) status = 'transferred';
+    else if (remaining <= 0) status = 'closed';
+    else if (sold > 0) status = 'partial';
+    else status = 'open';
+
+    var update = {
+      sold_grams: sold,
+      remaining_grams: remaining,
+      status: status,
+      updated_at: new Date().toISOString()
+    };
+
+    if (remaining <= 0 && (status === 'closed' || status === 'transferred')){
+      GN.supa.from('gold_cycles').select('start_date').eq('id', cycleId).single().then(function(r){
+        if (!r.error && r.data && r.data.start_date){
+          var days = Math.ceil((Date.now() - new Date(r.data.start_date).getTime()) / 86400000);
+          update.end_date = new Date().toISOString();
+          update.actual_days = days;
+          GN.supa.from('gold_cycles').update(update).eq('id', cycleId);
+        }
+      });
+    } else {
+      GN.supa.from('gold_cycles').update(update).eq('id', cycleId);
+    }
+
+    return update;
+  });
+};
+
 GN.transferCycleToInventory = function(cycle, onSuccess){
   if (!GN.session.isOwner || !GN.session.isAdmin){ GN.toast(GN.t('readOnlyNotice'), 'bad'); return; }
 
@@ -1359,7 +1590,6 @@ GN.transferCycleToInventory = function(cycle, onSuccess){
     GN.supa.from('gold_inventory').insert(payload).then(function(res){
       if (res.error){ GN.toast(res.error.message, 'bad'); console.error(res.error); return; }
 
-      /* Update cycle status */
       GN.supa.from('gold_cycles').update({
         transferred_grams: Number(cycle.transferred_grams || 0) + remaining,
         remaining_grams: 0,
@@ -1384,9 +1614,6 @@ GN.transferCycleToInventory = function(cycle, onSuccess){
   });
 };
 
-/* ============================================================
-   Realize profit (bank transfer)
-   ============================================================ */
 GN.realizeProfit = function(saleId, cycleId, onSuccess){
   if (!GN.session.isOwner || !GN.session.isAdmin){ GN.toast(GN.t('readOnlyNotice'), 'bad'); return; }
 
@@ -1396,7 +1623,6 @@ GN.realizeProfit = function(saleId, cycleId, onSuccess){
 
   titleEl.textContent = 'تحقيق الربح — تسجيل الحوالة البنكية';
 
-  /* Load sale data */
   GN.supa.from('gold_cycle_sales').select('*').eq('id', saleId).single().then(function(res){
     if (res.error){ GN.toast(res.error.message, 'bad'); return; }
     var sale = res.data;
@@ -1418,7 +1644,6 @@ GN.realizeProfit = function(saleId, cycleId, onSuccess){
           '<div class="input-wrap"><textarea id="rp_notes" rows="2"></textarea></div></div>' +
       '</div>';
 
-    /* Load banks */
     var banks = GN.dh.list('banks') || [];
     var sel = document.getElementById('rp_bank');
     banks.forEach(function(b){
@@ -1431,6 +1656,8 @@ GN.realizeProfit = function(saleId, cycleId, onSuccess){
     var submitBtn = document.getElementById('formModalSubmit');
     submitBtn.textContent = 'تأكيد التحقيق';
     submitBtn.style.display = '';
+    GN.openModal('formModal');
+
     submitBtn.onclick = function(){
       var trf = document.getElementById('rp_transfer').value.trim();
       if (!trf){ GN.toast('رقم الحوالة مطلوب', 'bad'); return; }
@@ -1458,12 +1685,11 @@ GN.realizeProfit = function(saleId, cycleId, onSuccess){
           type: 'edit',
           section: 'cycles',
           target: 'cycle',
-          target_id: cycleId,
+          target_id: cycleId || '',
           title: 'تحقيق ربح',
           body: GN.formatMoneyPlain(sale.net_profit, 'SDG') + ' — ' + trf
         });
 
-        /* Add fund transaction for profit pool */
         GN.supa.from('fund_pools').select('id').eq('code','profit').single().then(function(fr){
           if (!fr.error && fr.data){
             GN.supa.from('fund_transactions').insert({
@@ -1479,18 +1705,29 @@ GN.realizeProfit = function(saleId, cycleId, onSuccess){
           }
         });
 
+        if (bankId){
+          GN.addBankTransfer({
+            bank_id: bankId,
+            type: 'in',
+            amount: sale.net_profit,
+            currency: 'SDG',
+            party: 'ربح دورة ذهب',
+            invoice: trf,
+            notes: 'تحقيق ربح — حوالة ' + trf,
+            source: 'fund',
+            source_id: saleId,
+            date: document.getElementById('rp_date').value || GN.today()
+          });
+        }
+
         GN.closeModal('formModal');
         if (onSuccess) onSuccess();
+        else GN.loadCycles();
       });
     };
-
-    GN.openModal('formModal');
   });
 };
 
-/* ============================================================
-   Delete a cycle sale
-   ============================================================ */
 GN.deleteCycleSale = function(saleId, cycleId, onSuccess){
   if (!GN.session.isOwner){ GN.toast(GN.t('readOnlyNotice'), 'bad'); return; }
   GN.confirm({
@@ -1511,5 +1748,53 @@ GN.deleteCycleSale = function(saleId, cycleId, onSuccess){
     });
   });
 };
+
+GN.deleteCycle = function(id){
+  if (!GN.session.isOwner){ GN.toast(GN.t('readOnlyNotice'), 'bad'); return; }
+  GN.confirm({
+    title: GN.t('delete'),
+    text: 'حذف هذه الدورة؟ سيتم حذف بيعاتها الجزئية أيضًا.',
+    okText: GN.t('delete'),
+    cancelText: GN.t('cancel'),
+    danger: true
+  }).then(function(ok){
+    if (!ok) return;
+    GN.supa.from('gold_cycles').delete().eq('id', id).then(function(res){
+      if (res.error){ GN.toast(res.error.message, 'bad'); return; }
+      GN.notify.markDeleted('cycles', 'cycle', id);
+      GN.toast(GN.t('deletedSuccess'), 'ok');
+      GN.loadCycles();
+    });
+  });
+};
+
+/* ============================================================
+   Bind Section
+   ============================================================ */
+GN.bindSection.cycles = function(){
+  GN.bindAction('cycle-add', function(){
+    if (!GN.session.isOwner || !GN.session.isAdmin){
+      GN.toast(GN.t('readOnlyNotice'), 'bad'); return;
+    }
+    GN.openCycleForm(null);
+  });
+
+  GN.bindAction('brokerage-add', function(){
+    if (!GN.session.isOwner || !GN.session.isAdmin){
+      GN.toast(GN.t('readOnlyNotice'), 'bad'); return;
+    }
+    GN.openBrokerageForm(null);
+  });
+
+  GN.bindAction('cycles-apply', function(){
+    GN.readCyclesFilters();
+    GN.loadCycles();
+  });
+
+  GN.bindAction('cycles-clear', function(){
+    GN.clearCyclesFilters();
+  });
+};
+
 console.log('[Gold Nile] dashboard/12-cycles.js loaded');
 })();
