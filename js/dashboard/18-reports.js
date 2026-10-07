@@ -1,7 +1,7 @@
 /* ============================================================
    Gold Nile — Dashboard / Reports Center
-   11 reports · Shared filters · Search · Print · CSV Export
-   متاح للجميع (Owner · Reader)
+   12 reports · Shared filters · Search · Print · CSV Export
+   + Brokerages report
    ============================================================ */
 (function(){
 'use strict';
@@ -18,6 +18,7 @@ GN._reportDataCache = {};
 GN.sections.reports = function(){
   var tabs = [
     { key:'cycles',     label: GN.t('repTabCycles') },
+    { key:'brokerages', label: GN.t('repTabBrokerages') },
     { key:'geography',  label: GN.t('repTabGeography') },
     { key:'agents',     label: GN.t('repTabAgents') },
     { key:'inventory',  label: GN.t('repTabInventory') },
@@ -45,7 +46,7 @@ GN.sections.reports = function(){
         GN.esc(GN.t('repExport')) + '</button>' +
     '</div></div>';
 
-  /* Shared filters */
+  /* Filters */
   html += '<div class="fin-filters" style="grid-template-columns:repeat(4,1fr)">' +
     '<div class="ff-field"><label>' + GN.esc(GN.t('cyFilterFrom')) + '</label>' +
       '<input type="date" id="rep_from" value="' + GN.escAttr(f.date_from) + '"></div>' +
@@ -104,7 +105,6 @@ GN.runReport = function(){
     if (box) box.innerHTML = html;
     GN.bindReportActions();
 
-    /* Reset search on tab change */
     var inp = document.getElementById('repSearch');
     if (inp) inp.value = '';
     var cnt = document.getElementById('repSearchCount');
@@ -221,7 +221,67 @@ GN.reportBuilders.cycles = function(){
   });
 };
 
-/* ---------- 2) GEOGRAPHY ---------- */
+/* ---------- 2) BROKERAGES ---------- */
+GN.reportBuilders.brokerages = function(){
+  var q = GN.supa.from('gold_brokerages').select('*');
+  q = GN.repApplyFilters(q, 'broker_date');
+  return q.order('broker_date', { ascending: false }).limit(500).then(function(res){
+    if (res.error) throw res.error;
+    var data = res.data || [];
+    GN._reportDataCache.brokerages = data;
+
+    var totalAmount = 0, totalComm = 0, totalTax = 0, totalNet = 0;
+    var saleCount = 0, purchaseCount = 0, otherCount = 0;
+
+    data.forEach(function(b){
+      totalAmount += Number(b.amount || 0);
+      totalComm += Number(b.commission_amount || 0);
+      totalTax += Number(b.taxes_fees || 0);
+      totalNet += Number(b.net_profit || 0);
+      if (b.type === 'sale') saleCount++;
+      else if (b.type === 'purchase') purchaseCount++;
+      else otherCount++;
+    });
+
+    var kpis = GN.repKpis([
+      { lbl: 'عدد الوساطات', val: data.length, icon: 'chart', hl: true },
+      { lbl: 'إجمالي المبالغ', valHtml: GN.formatNum(totalAmount) + ' SDG', icon: 'dollar', color: 'g' },
+      { lbl: 'إجمالي العمولات', valHtml: GN.formatNum(totalComm) + ' SDG', icon: 'wallet', color: 'ok' },
+      { lbl: 'إجمالي الضرائب', valHtml: GN.formatNum(totalTax) + ' SDG', icon: 'receipt', color: 'b' },
+      { lbl: 'صافي أرباح الوساطة', valHtml: GN.formatNum(totalNet) + ' SDG', icon: 'check', color: 'ok' },
+      { lbl: 'بيع / شراء / أخرى', valHtml: saleCount + ' / ' + purchaseCount + ' / ' + otherCount, icon: 'chart' }
+    ]);
+
+    var typeLbls = { sale: 'بيع', purchase: 'شراء', other: 'أخرى' };
+
+    var rows = data.map(function(b){
+      var typeLbl = typeLbls[b.type] || b.type;
+      var commTypeLbl = b.commission_type === 'percent'
+        ? GN.formatNum(b.commission_value, 2) + '%'
+        : GN.formatMoneyPlain(b.commission_value, 'SDG');
+
+      return [
+        '<bdi dir="ltr" style="font-family:monospace;font-size:11.5px">' + GN.esc(b.code || '—') + '</bdi>',
+        GN.esc(GN.formatDate(b.broker_date)),
+        GN.esc(typeLbl),
+        GN.esc((b.reason || '—').slice(0, 60)),
+        GN.formatMoneyPlain(b.amount, b.currency || 'SDG'),
+        commTypeLbl,
+        GN.formatMoneyPlain(b.commission_amount, 'SDG'),
+        GN.formatMoneyPlain(b.taxes_fees, 'SDG'),
+        '<b style="color:var(--ok)">' + GN.formatMoneyPlain(b.net_profit, 'SDG') + '</b>'
+      ];
+    });
+
+    return kpis + GN.repTable(
+      ['الكود', 'التاريخ', 'النوع', 'السبب', 'المبلغ الإجمالي', 'العمولة', 'قيمة العمولة', 'الضرائب', 'صافي الربح'],
+      rows,
+      { title: 'تقرير الوساطات', empty: 'لا توجد وساطات في هذه الفترة' }
+    );
+  });
+};
+
+/* ---------- 3) GEOGRAPHY ---------- */
 GN.reportBuilders.geography = function(){
   return Promise.all([
     (function(){ var q = GN.supa.from('gold_cycles').select('quantity_grams,purchase_total,purchase_state_id,purchase_city_id,purchase_place_id'); return GN.repApplyFilters(q, 'start_date'); })(),
@@ -274,7 +334,7 @@ GN.reportBuilders.geography = function(){
   });
 };
 
-/* ---------- 3) AGENTS ---------- */
+/* ---------- 4) AGENTS ---------- */
 GN.reportBuilders.agents = function(){
   return Promise.all([
     GN.supa.from('agents').select('*').order('name'),
@@ -346,7 +406,7 @@ GN.reportBuilders.agents = function(){
   });
 };
 
-/* ---------- 4) INVENTORY ---------- */
+/* ---------- 5) INVENTORY ---------- */
 GN.reportBuilders.inventory = function(){
   return Promise.all([
     (function(){ var q = GN.supa.from('gold_inventory').select('*'); return GN.repApplyFilters(q, 'entry_date'); })(),
@@ -395,7 +455,7 @@ GN.reportBuilders.inventory = function(){
   });
 };
 
-/* ---------- 5) EXPENSES ---------- */
+/* ---------- 6) EXPENSES ---------- */
 GN.reportBuilders.expenses = function(){
   return Promise.all([
     (function(){ var q = GN.supa.from('expenses').select('*'); return GN.repApplyFilters(q, 'expense_date'); })(),
@@ -452,14 +512,16 @@ GN.reportBuilders.expenses = function(){
   });
 };
 
-/* ---------- 6) PROFITS ---------- */
+/* ---------- 7) PROFITS ---------- */
 GN.reportBuilders.profits = function(){
   return Promise.all([
     (function(){ var q = GN.supa.from('gold_cycle_sales').select('*'); return GN.repApplyFilters(q, 'sale_date'); })(),
-    (function(){ var q = GN.supa.from('inventory_sales').select('*'); return GN.repApplyFilters(q, 'sale_date'); })()
+    (function(){ var q = GN.supa.from('inventory_sales').select('*'); return GN.repApplyFilters(q, 'sale_date'); })(),
+    (function(){ var q = GN.supa.from('gold_brokerages').select('*'); return GN.repApplyFilters(q, 'broker_date'); })()
   ]).then(function(res){
     var cycleSales = res[0].error ? [] : (res[0].data || []);
     var invSales = res[1].error ? [] : (res[1].data || []);
+    var brokerages = res[2].error ? [] : (res[2].data || []);
 
     var pending = 0, realized = 0, totalG = 0, grossProfit = 0, totalRevenue = 0;
     var all = cycleSales.concat(invSales);
@@ -473,11 +535,16 @@ GN.reportBuilders.profits = function(){
       totalRevenue += Number(s.selling_total || 0);
     });
 
+    /* Brokerage profits */
+    var brokerProfit = 0;
+    brokerages.forEach(function(b){ brokerProfit += Number(b.net_profit || 0); });
+
     var kpis = GN.repKpis([
       { lbl: 'إجمالي الإيراد', valHtml: GN.formatNum(totalRevenue) + ' SDG', icon: 'dollar', hl: true },
       { lbl: 'الربح الإجمالي', valHtml: GN.formatNum(grossProfit) + ' SDG', icon: 'chart', color: 'g' },
       { lbl: 'الربح المعلّق', valHtml: GN.formatNum(pending) + ' SDG', icon: 'dollar', color: 'y' },
       { lbl: 'الربح المحقق', valHtml: GN.formatNum(realized) + ' SDG', icon: 'check', color: 'ok' },
+      { lbl: 'أرباح الوساطة', valHtml: GN.formatNum(brokerProfit) + ' SDG', icon: 'chart', color: 'g' },
       { lbl: 'إجمالي المبيع', valHtml: GN.formatNum(totalG, 2) + 'g', icon: 'gold', color: 'g' }
     ]);
 
@@ -493,8 +560,23 @@ GN.reportBuilders.profits = function(){
         '<b style="color:' + (Number(s.net_profit) >= 0 ? 'var(--ok)' : 'var(--bad)') + '">' + (Number(s.net_profit) >= 0 ? '+' : '') + GN.formatMoneyPlain(s.net_profit, 'SDG') + '</b>',
         statusLbl
       ];
-    }).sort(function(a, b){
-      return b[0].localeCompare(a[0]);
+    });
+
+    /* Add brokerage rows */
+    brokerages.forEach(function(b){
+      rows.push([
+        GN.esc(GN.formatDate(b.broker_date)),
+        '<span class="chip n" style="font-size:10px">وساطة</span>',
+        '—',
+        GN.formatMoneyPlain(b.amount, 'SDG'),
+        GN.formatMoneyPlain(b.taxes_fees, 'SDG'),
+        '<b style="color:var(--ok)">+' + GN.formatMoneyPlain(b.net_profit, 'SDG') + '</b>',
+        '<span class="chip ok">محقق</span>'
+      ]);
+    });
+
+    rows.sort(function(a, b){
+      return (b[0] || '').localeCompare(a[0] || '');
     });
 
     GN._reportDataCache.profits = rows;
@@ -507,16 +589,18 @@ GN.reportBuilders.profits = function(){
   });
 };
 
-/* ---------- 7) TAXES ---------- */
+/* ---------- 8) TAXES ---------- */
 GN.reportBuilders.taxes = function(){
   return Promise.all([
     (function(){ var q = GN.supa.from('gold_cycles').select('code,start_date,purchase_tax_type,purchase_tax_value,purchase_tax_amount,purchase_fee_amount,purchase_fee_desc'); return GN.repApplyFilters(q, 'start_date'); })(),
-    (function(){ var q = GN.supa.from('gold_cycle_sales').select('sale_date,sale_tax_type,sale_tax_value,sale_tax_amount,sale_fee_amount,sale_fee_desc'); return GN.repApplyFilters(q, 'sale_date'); })()
+    (function(){ var q = GN.supa.from('gold_cycle_sales').select('sale_date,sale_tax_type,sale_tax_value,sale_tax_amount,sale_fee_amount,sale_fee_desc'); return GN.repApplyFilters(q, 'sale_date'); })(),
+    (function(){ var q = GN.supa.from('gold_brokerages').select('code,broker_date,taxes_fees,taxes_fees_desc'); return GN.repApplyFilters(q, 'broker_date'); })()
   ]).then(function(res){
     var cycles = res[0].error ? [] : (res[0].data || []);
     var sales = res[1].error ? [] : (res[1].data || []);
+    var brokerages = res[2].error ? [] : (res[2].data || []);
 
-    var totalBuyTax = 0, totalBuyFee = 0, totalSellTax = 0, totalSellFee = 0;
+    var totalBuyTax = 0, totalBuyFee = 0, totalSellTax = 0, totalSellFee = 0, totalBrokerTax = 0;
     cycles.forEach(function(c){
       totalBuyTax += Number(c.purchase_tax_amount || 0);
       totalBuyFee += Number(c.purchase_fee_amount || 0);
@@ -525,15 +609,19 @@ GN.reportBuilders.taxes = function(){
       totalSellTax += Number(s.sale_tax_amount || 0);
       totalSellFee += Number(s.sale_fee_amount || 0);
     });
+    brokerages.forEach(function(b){
+      totalBrokerTax += Number(b.taxes_fees || 0);
+    });
 
-    var grand = totalBuyTax + totalBuyFee + totalSellTax + totalSellFee;
+    var grand = totalBuyTax + totalBuyFee + totalSellTax + totalSellFee + totalBrokerTax;
 
     var kpis = GN.repKpis([
       { lbl: 'إجمالي الضرائب والرسوم', valHtml: GN.formatNum(grand) + ' SDG', icon: 'receipt', hl: true },
       { lbl: 'ضريبة الشراء', valHtml: GN.formatNum(totalBuyTax) + ' SDG', icon: 'dollar', color: 'y' },
       { lbl: 'رسوم الشراء', valHtml: GN.formatNum(totalBuyFee) + ' SDG', icon: 'dollar', color: 'y' },
       { lbl: 'ضريبة البيع', valHtml: GN.formatNum(totalSellTax) + ' SDG', icon: 'dollar', color: 'b' },
-      { lbl: 'رسوم البيع', valHtml: GN.formatNum(totalSellFee) + ' SDG', icon: 'dollar', color: 'b' }
+      { lbl: 'رسوم البيع', valHtml: GN.formatNum(totalSellFee) + ' SDG', icon: 'dollar', color: 'b' },
+      { lbl: 'ضرائب الوساطة', valHtml: GN.formatNum(totalBrokerTax) + ' SDG', icon: 'dollar', color: 'b' }
     ]);
 
     var rows = [];
@@ -561,6 +649,18 @@ GN.reportBuilders.taxes = function(){
         GN.esc(s.sale_fee_desc || '—')
       ]);
     });
+    brokerages.forEach(function(b){
+      if (!b.taxes_fees) return;
+      rows.push([
+        GN.esc(GN.formatDate(b.broker_date)),
+        '<bdi dir="ltr" style="font-family:monospace;font-size:11.5px">' + GN.esc(b.code || '—') + '</bdi>',
+        '<span class="chip n" style="font-size:10px">وساطة</span>',
+        '—',
+        GN.formatMoneyPlain(b.taxes_fees, 'SDG'),
+        '—',
+        GN.esc(b.taxes_fees_desc || '—')
+      ]);
+    });
 
     GN._reportDataCache.taxes = rows;
 
@@ -572,7 +672,7 @@ GN.reportBuilders.taxes = function(){
   });
 };
 
-/* ---------- 8) PERFORMANCE ---------- */
+/* ---------- 9) PERFORMANCE ---------- */
 GN.reportBuilders.performance = function(){
   var q = GN.supa.from('gold_cycles').select('*');
   q = GN.repApplyFilters(q, 'start_date');
@@ -632,7 +732,7 @@ GN.reportBuilders.performance = function(){
   });
 };
 
-/* ---------- 9) COMPANY BALANCE ---------- */
+/* ---------- 10) COMPANY BALANCE ---------- */
 GN.reportBuilders.company = function(){
   var q = GN.supa.from('fund_transactions').select('*, fund_pools:pool_id(code, name_ar, currency)');
   q = GN.repApplyFilters(q, 'created_at');
@@ -675,7 +775,7 @@ GN.reportBuilders.company = function(){
   });
 };
 
-/* ---------- 10) USD ---------- */
+/* ---------- 11) USD ---------- */
 GN.reportBuilders.usd = function(){
   return Promise.all([
     GN.supa.from('fund_pools').select('*').eq('currency', 'USD'),
@@ -720,7 +820,7 @@ GN.reportBuilders.usd = function(){
   });
 };
 
-/* ---------- 11) FX ---------- */
+/* ---------- 12) FX ---------- */
 GN.reportBuilders.fx = function(){
   var q = GN.supa.from('currency_exchanges').select('*');
   q = GN.repApplyFilters(q, 'exchange_date');
@@ -841,6 +941,7 @@ GN.printReport = function(){
 
   var tabName = {
     cycles: GN.t('repTabCycles'),
+    brokerages: GN.t('repTabBrokerages'),
     geography: GN.t('repTabGeography'),
     agents: GN.t('repTabAgents'),
     inventory: GN.t('repTabInventory'),
@@ -909,7 +1010,7 @@ GN.printReport = function(){
 };
 
 /* ============================================================
-   Export CSV (متاح للجميع)
+   Export CSV
    ============================================================ */
 GN.exportCurrentReport = function(){
   var tab = GN.reportsTab;
@@ -930,7 +1031,7 @@ GN.exportCurrentReport = function(){
   });
 
   var tabName = {
-    cycles:'Cycles', geography:'Geography', agents:'Agents',
+    cycles:'Cycles', brokerages:'Brokerages', geography:'Geography', agents:'Agents',
     inventory:'Inventory', expenses:'Expenses', profits:'Profits',
     taxes:'Taxes', performance:'Performance', company:'Company',
     usd:'USD', fx:'FX'

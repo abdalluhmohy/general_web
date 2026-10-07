@@ -6734,3 +6734,11 @@ body.public-view .bm-v3-subtitle{ color:var(--ink-3); }
 body.public-view .bm-v3-quote{ color:var(--ink-2); }
 body.public-view .bm-v3-quote::before{ color:var(--gold-b); }
 body.public-view .bm-v3-flag{ border-color:var(--paper); }
+
+
+/* ============================================================
+   Hide flags in Board of Directors (v3)
+   ============================================================ */
+.bm-v3-flag{
+  display:none !important;
+}

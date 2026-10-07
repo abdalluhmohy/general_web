@@ -1067,6 +1067,7 @@
       repSearchClear: 'مسح البحث',
       repSearchNone: 'لا نتائج',
       repPrintDate: 'تاريخ الطباعة',
+      repTabBrokerages: 'الوساطة',
       
     },
 
@@ -2131,6 +2132,7 @@
       repSearchClear: 'Clear search',
       repSearchNone: 'No results',
       repPrintDate: 'Print date',
+      repTabBrokerages: 'Brokerages',
     }
   };
 
