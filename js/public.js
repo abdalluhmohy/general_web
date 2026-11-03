@@ -145,8 +145,9 @@
     GN.renderNews(data.news || []);
     GN.renderSocialLinks((data.settings && data.settings.social) || {});
     GN.renderContactInfo((data.settings && data.settings.contact) || {});
+     GN.renderCareersButton((data.settings && data.settings.careers_form_url) || '');
   };
-
+  
   /* ============================================================
      Editable helpers (contenteditable blur save)
      ============================================================ */
@@ -569,6 +570,24 @@
     if (inputs.email) inputs.email.value = contact.email || '';
     if (inputs.phone) inputs.phone.value = contact.phone || '';
     if (inputs.whatsapp) inputs.whatsapp.value = contact.whatsapp || '';
+  };
+
+    /* ============================================================
+     Careers Button (Header) — "انضم إلينا"
+     ============================================================ */
+  GN.renderCareersButton = function(url){
+    var btn = document.getElementById('careersBtn');
+    if (!btn) return;
+    url = (url || '').trim();
+    if (!url){
+      btn.hidden = true;
+      btn.setAttribute('href', '#');
+      return;
+    }
+    btn.hidden = false;
+    btn.setAttribute('href', url);
+    btn.setAttribute('target', '_blank');
+    btn.setAttribute('rel', 'noopener noreferrer');
   };
 
   /* ============================================================

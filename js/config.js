@@ -77,6 +77,7 @@
       company_short: 'ذهب النيل',
       company_tagline: 'للأعمال المتكاملة المحدودة',
       company_status: 'مرحلة ترخيص معمل فحص الذهب وتجهيز المعدات',
+      careers_form_url: '',
 
       // الاستثمار والرأسمال
       capital_total: 66000,

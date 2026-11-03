@@ -583,6 +583,16 @@ GN.sections.settings = function(){
         '<div class="input-wrap"><input type="text" data-set="currency" value="' + GN.escAttr(s.currency || 'USD') + '"></div></div>' +
     '</div>' +
     '<div style="text-align:end;margin-top:14px"><button class="btn btn-pri" data-act="save-settings">' + GN.esc(GN.t('saveChanges')) + '</button></div></div>';
+    /* Careers — انضم إلينا */
+  var careersUrl = s.careers_form_url || '';
+  html += '<div class="card"><div class="card-head"><h3>' + GN.navIcon('team') + ' ' + GN.esc(GN.t('careersBtn')) + '</h3></div>' +
+    '<div class="form-grid">' +
+      '<div class="field full"><label>' + GN.esc(GN.t('careersFormUrl')) + '</label>' +
+        '<div class="input-wrap"><input type="url" dir="ltr" data-set="careers_form_url" placeholder="' + GN.escAttr(GN.t('careersFormUrlPh')) + '" value="' + GN.escAttr(careersUrl) + '"></div>' +
+        '<div class="helper">' + GN.esc(GN.t('careersFormUrlHint')) + '</div>' +
+      '</div>' +
+    '</div>' +
+    '<div style="text-align:end;margin-top:14px"><button class="btn btn-pri" data-act="save-settings">' + GN.esc(GN.t('saveChanges')) + '</button></div></div>';
 
   html += '<div class="card"><div class="card-head"><h3>' + GN.navIcon('cog') + ' ' + GN.esc(GN.t('contactInfo')) + '</h3></div>' +
     '<div class="form-grid">' +
