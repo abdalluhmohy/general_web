@@ -125,7 +125,7 @@ GN.renderFundsGrid = function(){
         '</div>' +
         (isAdmin
           ? '<button class="icon-act" data-fund-edit="' + GN.escAttr(p.id) + '" title="' + GN.escAttr(GN.t('fundEditPool')) + '">' + GN.ICO_EDIT + '</button>'
-          : '') +
+          : '') + (p.code === 'profit' ? '<button class="btn btn-pri btn-sm" data-act="distribute-profits" style="flex:1;font-size:11.5px">توزيع الأرباح</button>' : '') +
       '</div>' +
 
       '<div style="text-align:center;padding:14px 0;border-top:1px dashed var(--line);border-bottom:1px dashed var(--line);margin-bottom:12px">' +
@@ -948,6 +948,7 @@ GN.fundForm = function(mode){
    ============================================================ */
 GN.bindSection.funds = function(){
   GN.bindAction('fund-deposit',  function(){ GN.fundForm('deposit'); });
+  GN.bindAction('distribute-profits', function(){ GN.openDistributeProfitsFromPool(); });
   GN.bindAction('fund-withdraw', function(){ GN.fundForm('withdraw'); });
   GN.bindAction('fund-transfer', function(){ GN.fundForm('transfer'); });
   GN.bindAction('fund-usd',      function(){

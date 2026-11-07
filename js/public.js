@@ -64,10 +64,39 @@
   /* ============================================================
      Merge with defaults
      ============================================================ */
-  GN.normalizeData = function(data){
+      GN.normalizeData = function(data){
     var def = GN.clone(window.GN_DEFAULT_DATA || {});
     if (!data) return def;
-    return GN.mergeDeep(def, data);
+    var merged = GN.mergeDeep(def, data);
+
+    // === إضافة الخزنة النقدية تلقائياً ===
+    if (!merged.dashboard) merged.dashboard = {};
+    if (!merged.dashboard.banks) merged.dashboard.banks = [];
+
+    var hasVault = merged.dashboard.banks.some(function(b){
+      return b.id === 'vault-cash-001';
+    });
+    if (!hasVault){
+      merged.dashboard.banks.unshift({
+        id: 'vault-cash-001',
+        name: 'الخزنة النقدية (Cash)',
+        currency: 'SDG',
+        balance: 0,
+        is_vault: true,
+        account_number: 'CASH-001',
+        branch: 'داخل الشركة'
+      });
+    }
+    
+    // تأكد من وجود الهيكل الجديد للاستثمار
+    if (!merged.dashboard.investment) {
+      merged.dashboard.investment = { capital_entries: [], debts: [], payments: [] };
+    } else {
+      if (!merged.dashboard.investment.capital_entries) merged.dashboard.investment.capital_entries = [];
+      if (!merged.dashboard.investment.debts) merged.dashboard.investment.debts = [];
+    }
+
+    return merged;
   };
 
   /* ============================================================

@@ -102,6 +102,8 @@
       navNews: 'الأخبار',
       navContact: 'تواصل',
       partnersLogin: 'دخول الشركاء',
+      navDebts: 'الديون والالتزامات',
+      navPartners: 'محافظ الشركاء والأرباح',
 
       /* Public site - Hero */
       kicker: 'شركة سودانية جديدة · قطاع التعدين والذهب',
@@ -1078,6 +1080,8 @@
       repSearchNone: 'لا نتائج',
       repPrintDate: 'تاريخ الطباعة',
       repTabBrokerages: 'الوساطة',
+      navDebts: 'Debts',
+      navPartners: 'Partners Wallets',
       
     },
 

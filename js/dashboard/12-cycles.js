@@ -699,7 +699,7 @@ GN.loadAgentsForSelect = function(selectId, selectedId){
 };
 
 /* ============================================================
-   Cycle Form (regular buy/sell cycle)
+   Cycle Form (regular buy/sell cycle) + Payment Source
    ============================================================ */
 GN.openCycleForm = function(id){
   if (!GN.session.isOwner || !GN.session.isAdmin){
@@ -757,6 +757,16 @@ GN.openCycleForm = function(id){
 
       '</div>' +
 
+      /* ===== الدفع ===== */
+      '<div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--line-2)">' +
+        '<div style="font-weight:800;font-size:13px;margin-bottom:10px;color:var(--gold-d)">مصدر تمويل الشراء</div>' +
+        '<div class="form-grid">' +
+          '<div class="field full"><label>الدفع من حساب <span class="req">*</span></label>' +
+            '<div class="input-wrap"><select id="cy_pay_source"></select></div></div>' +
+        '</div>' +
+      '</div>' +
+
+      /* ===== الموقع ===== */
       '<div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--line-2)">' +
         '<div style="font-weight:800;font-size:13px;margin-bottom:10px;color:var(--ink-2)">' + GN.esc(GN.t('cycleLocationSection') || 'موقع الشراء') + '</div>' +
         '<div class="form-grid">' +
@@ -778,6 +788,7 @@ GN.openCycleForm = function(id){
         '</div>' +
       '</div>' +
 
+      /* ===== المندوب ===== */
       '<div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--line-2)">' +
         '<div style="font-weight:800;font-size:13px;margin-bottom:10px;color:var(--ink-2)">' + GN.esc(GN.t('cycleAgentSection') || 'المندوب') + ' (اختياري)</div>' +
         '<div class="form-grid">' +
@@ -791,6 +802,7 @@ GN.openCycleForm = function(id){
         '</div>' +
       '</div>' +
 
+      /* ===== الضريبة ===== */
       '<div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--line-2)">' +
         '<div style="font-weight:800;font-size:13px;margin-bottom:10px;color:var(--ink-2)">' + GN.esc(GN.t('cycleTaxSection') || 'الضريبة والرسوم') + '</div>' +
         '<div class="form-grid">' +
@@ -827,6 +839,14 @@ GN.openCycleForm = function(id){
     document.getElementById('cy_quantity').addEventListener('input', calc);
     document.getElementById('cy_ppg').addEventListener('input', calc);
     calc();
+
+    /* تعبئة البنوك */
+    var banks = GN.dh.list('banks');
+    var bankOpts = banks.map(function(b){
+      return '<option value="bank_' + GN.escAttr(b.id) + '" data-currency="' + GN.escAttr(b.currency) + '">' + 
+        GN.esc(b.name) + ' (' + b.currency + ': ' + GN.formatNum(b.balance || 0) + ')</option>';
+    }).join('');
+    document.getElementById('cy_pay_source').innerHTML = bankOpts;
 
     GN.loadLocationsForSelect('cy_state', 'state', null, item.purchase_state_id);
     if (item.purchase_state_id) GN.loadLocationsForSelect('cy_city', 'city', item.purchase_state_id, item.purchase_city_id);
@@ -883,6 +903,7 @@ GN.openCycleForm = function(id){
     var submitBtn = document.getElementById('formModalSubmit');
     submitBtn.textContent = isEdit ? GN.t('saveChanges') : GN.t('save');
     submitBtn.style.display = '';
+    
     submitBtn.onclick = function(){
       var qty = Number(document.getElementById('cy_quantity').value) || 0;
       var ppg = Number(document.getElementById('cy_ppg').value) || 0;
@@ -894,6 +915,19 @@ GN.openCycleForm = function(id){
       if (!startDate){ GN.toast(GN.t('fieldRequired'), 'bad'); return; }
 
       var total = qty * ppg;
+      var paySourceVal = document.getElementById('cy_pay_source').value;
+      if (!paySourceVal) { GN.toast('اختر حساب الدفع أولاً', 'bad'); return; }
+      
+      var bankId = paySourceVal.replace('bank_', '');
+      var bank = banks.filter(function(b){ return b.id === bankId; })[0];
+
+      // فحص الرصيد فقط إذا كانت دورة جديدة
+      if (!isEdit) {
+        if (!bank || Number(bank.balance) < total) {
+          GN.toast('رصيد الحساب المختار لا يكفي!', 'bad'); return;
+        }
+      }
+
       var taxType = document.getElementById('cy_tax_type').value;
       var taxValue = Number(document.getElementById('cy_tax_value').value) || 0;
       var taxAmount = 0;
@@ -945,14 +979,32 @@ GN.openCycleForm = function(id){
       }
 
       promise.then(function(res){
-        submitBtn.disabled = false;
         if (res.error){
+          submitBtn.disabled = false;
           console.error('[cycle save]', res.error);
           GN.toast(res.error.message, 'bad');
           return;
         }
 
         var newId = isEdit ? id : (res.data && res.data[0] ? res.data[0].id : null);
+
+        // خصم المبلغ من البنك
+        if (!isEdit) {
+          bank.balance = Number(bank.balance) - total;
+          
+          GN.addBankTransfer({
+            bank_id: bankId,
+            type: 'out',
+            amount: total,
+            currency: bank.currency || 'SDG',
+            party: 'شراء دورة ذهب ' + payload.code,
+            notes: 'تمويل شراء دورة',
+            source: 'cycle_buy',
+            source_id: newId || '',
+            date: GN.today()
+          });
+        }
+
         GN.toast(isEdit ? GN.t('savedSuccess') : 'تم إنشاء الدورة', 'ok');
 
         if (!isEdit && agentId && commissionAmount > 0){
@@ -1250,7 +1302,7 @@ GN.renderCycleDetails = function(c, sales, overlay, closeFn){
 };
 
 /* ============================================================
-   Partial Sale Form
+   Partial Sale Form (with Return Capital & Profit Distribution)
    ============================================================ */
 GN.openPartialSaleForm = function(cycle, onSuccess, isFullSale){
   if (!GN.session.isOwner || !GN.session.isAdmin){ GN.toast(GN.t('readOnlyNotice'), 'bad'); return; }
@@ -1259,253 +1311,141 @@ GN.openPartialSaleForm = function(cycle, onSuccess, isFullSale){
   var titleEl = document.getElementById('formModalTitle');
   if (!body || !titleEl) return;
 
-  titleEl.textContent = isFullSale
-    ? 'بيع الكامل — ' + (cycle.code || '')
-    : 'بيع جزء من الدورة ' + (cycle.code || '');
+  titleEl.textContent = isFullSale ? 'بيع الكامل — ' + cycle.code : 'بيع جزء — ' + cycle.code;
 
   var maxG = Number(cycle.remaining_grams || 0);
-  var now = new Date();
-  var todayDate = now.toISOString().slice(0,10);
-  var nowTime = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+  var todayDate = new Date().toISOString().slice(0,10);
+
+  var banks = GN.dh.list('banks');
+  var bankOpts = banks.map(function(b){
+    return '<option value="' + GN.escAttr(b.id) + '">' + GN.esc(b.name) + ' (' + b.currency + ')</option>';
+  }).join('');
 
   body.innerHTML =
     '<div class="form-grid">' +
-
-      '<div class="field full" style="background:var(--gold-l);color:var(--gold-d);padding:10px 12px;border-radius:10px;font-size:12.5px;font-weight:700;text-align:center">' +
-        'المتبقي في الدورة: ' + GN.formatNum(maxG, 2) + ' g · سعر الشراء: ' + GN.formatMoneyPlain(cycle.purchase_price_per_gram, 'SDG') +
+      '<div class="field full" style="background:var(--gold-l);color:var(--gold-d);padding:10px;border-radius:10px;text-align:center;font-weight:700">' +
+        'المتبقي: ' + GN.formatNum(maxG, 2) + 'g · التكلفة: ' + GN.formatMoneyPlain(cycle.purchase_price_per_gram, 'SDG') +
+      '</div>' +
+      '<div class="field"><label>تاريخ البيع</label><input type="date" id="ps_date" value="' + todayDate + '"></div>' +
+      '<div class="field"><label>الكمية (g) <span class="req">*</span></label><input type="number" id="ps_qty" step="0.001" max="' + maxG + '" value="' + maxG + '"' + (isFullSale ? ' readonly' : '') + '></div>' +
+      '<div class="field"><label>سعر البيع/جرام (SDG) <span class="req">*</span></label><input type="number" id="ps_ppg" step="0.01"></div>' +
+      
+      '<div class="field full" style="background:var(--nile-l);padding:14px;border-radius:10px;margin-top:10px">' +
+        '<div style="font-weight:800;font-size:13px;margin-bottom:10px;color:var(--nile)">توزيع المبلغ (محاسبيًا)</div>' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">' +
+          '<div><label style="font-size:11px;color:var(--ink-2)">لرأس مال الذهب (الوعاء)</label><input type="number" id="ps_cap" readonly style="background:var(--bg);font-weight:700;width:100%"></div>' +
+          '<div><label style="font-size:11px;color:var(--ink-2)">للأرباح (الوعاء)</label><input type="number" id="ps_prof" readonly style="background:var(--bg);font-weight:700;color:var(--ok);width:100%"></div>' +
+        '</div>' +
       '</div>' +
 
-      '<div class="field"><label>تاريخ البيع <span class="req">*</span></label>' +
-        '<div class="input-wrap"><input type="date" id="ps_date" value="' + todayDate + '"></div></div>' +
-
-      '<div class="field"><label>وقت البيع</label>' +
-        '<div class="input-wrap"><input type="time" id="ps_time" value="' + nowTime + '"></div></div>' +
-
-      '<div class="field"><label>الكمية (g) <span class="req">*</span></label>' +
-        '<div class="input-wrap"><input type="number" id="ps_qty" step="0.001" min="0.001" max="' + maxG + '" value="' + maxG + '"' + (isFullSale ? ' readonly style="background:var(--bg-alt);font-weight:800"' : '') + '></div></div>' +
-
-      '<div class="field"><label>سعر البيع/جرام (SDG) <span class="req">*</span></label>' +
-        '<div class="input-wrap"><input type="number" id="ps_ppg" step="0.01" min="0"></div></div>' +
-
-      '<div class="field full"><label>إجمالي البيع</label>' +
-        '<div class="input-wrap"><input type="number" id="ps_total" readonly style="background:var(--bg-alt);font-weight:700"></div></div>' +
-
-    '</div>' +
-
-    '<div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--line-2)">' +
-      '<div style="font-weight:800;font-size:13px;margin-bottom:10px;color:var(--ink-2)">موقع البيع</div>' +
-      '<div class="form-grid">' +
-        '<div class="field"><label>الولاية</label><div class="input-wrap"><select id="ps_state"><option value="">—</option></select></div></div>' +
-        '<div class="field"><label>المدينة</label><div class="input-wrap"><select id="ps_city"><option value="">—</option></select></div></div>' +
-        '<div class="field full"><label>المكان / السوق</label><div class="input-wrap"><select id="ps_place"><option value="">—</option></select></div></div>' +
-      '</div>' +
-    '</div>' +
-
-    '<div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--line-2)">' +
-      '<div style="font-weight:800;font-size:13px;margin-bottom:10px;color:var(--ink-2)">المندوب (اختياري)</div>' +
-      '<div class="form-grid">' +
-        '<div class="field"><label>المندوب</label><div class="input-wrap"><select id="ps_agent"><option value="">— لا يوجد —</option></select></div></div>' +
-        '<div class="field"><label>عمولة البيع %</label><div class="input-wrap"><input type="number" id="ps_agent_pct" step="0.001" min="0" value="0"></div></div>' +
-      '</div>' +
-    '</div>' +
-
-    '<div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--line-2)">' +
-      '<div style="font-weight:800;font-size:13px;margin-bottom:10px;color:var(--ink-2)">الضريبة والرسوم</div>' +
-      '<div class="form-grid">' +
-        '<div class="field"><label>نوع الضريبة</label>' +
-          '<div class="input-wrap"><select id="ps_tax_type">' +
-            '<option value="none">لا يوجد</option>' +
-            '<option value="percent">نسبة %</option>' +
-            '<option value="fixed">مبلغ ثابت</option>' +
-          '</select></div></div>' +
-        '<div class="field"><label>قيمة الضريبة</label><div class="input-wrap"><input type="number" id="ps_tax_value" step="0.01" min="0" value="0"></div></div>' +
-        '<div class="field"><label>رسوم إضافية (مبلغ)</label><div class="input-wrap"><input type="number" id="ps_fee" step="0.01" min="0" value="0"></div></div>' +
-        '<div class="field"><label>وصف الرسوم</label><div class="input-wrap"><input type="text" id="ps_fee_desc"></div></div>' +
-      '</div>' +
-    '</div>' +
-
-    '<div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--line-2)">' +
-      '<div class="form-grid">' +
-        '<div class="field"><label>تكلفة البضاعة</label><div class="input-wrap"><input type="number" id="ps_cost" readonly style="background:var(--bg-alt)"></div></div>' +
-        '<div class="field"><label>الربح الإجمالي</label><div class="input-wrap"><input type="number" id="ps_gross" readonly style="background:var(--bg-alt)"></div></div>' +
-        '<div class="field full"><label style="color:var(--gold-d);font-weight:800">صافي الربح المتوقع</label><div class="input-wrap"><input type="number" id="ps_net" readonly style="background:var(--gold-l);color:var(--gold-dd);font-weight:800;font-size:16px"></div></div>' +
-      '</div>' +
-    '</div>' +
-
-    '<div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--line-2)">' +
-      '<div class="form-grid">' +
-        '<div class="field full"><label>مرفق (رابط)</label><div class="input-wrap"><input type="url" id="ps_attach" dir="ltr" placeholder="https://..."></div></div>' +
-        '<div class="field full"><label>ملاحظات</label><div class="input-wrap"><textarea id="ps_notes" rows="2"></textarea></div></div>' +
+      '<div class="field full" style="margin-top:10px">' +
+        '<label>إيداع المبلغ الإجمالي في حساب <span class="req">*</span></label>' +
+        '<select id="ps_bank">' + bankOpts + '</select>' +
       '</div>' +
     '</div>';
 
-  GN.loadLocationsForSelect('ps_state', 'state', null, cycle.purchase_state_id);
-  GN.loadAgentsForSelect('ps_agent', null);
-  if (cycle.purchase_state_id) GN.loadLocationsForSelect('ps_city', 'city', cycle.purchase_state_id, cycle.purchase_city_id);
-  if (cycle.purchase_city_id) GN.loadLocationsForSelect('ps_place', 'place', cycle.purchase_city_id, cycle.purchase_place_id);
-
-  document.getElementById('ps_state').addEventListener('change', function(){
-    GN.loadLocationsForSelect('ps_city', 'city', this.value, null);
-    document.getElementById('ps_place').innerHTML = '<option value="">—</option>';
-  });
-  document.getElementById('ps_city').addEventListener('change', function(){
-    GN.loadLocationsForSelect('ps_place', 'place', this.value, null);
-  });
-  document.getElementById('ps_agent').addEventListener('change', function(){
-    var opt = this.options[this.selectedIndex];
-    var pct = opt.getAttribute('data-sell-pct');
-    if (pct) document.getElementById('ps_agent_pct').value = pct;
-  });
-
-  function recalc(){
+  function calc(){
     var qty = Number(document.getElementById('ps_qty').value) || 0;
     var ppg = Number(document.getElementById('ps_ppg').value) || 0;
     var total = qty * ppg;
+    var cost = qty * Number(cycle.purchase_price_per_gram || 0);
+    var profit = total - cost;
 
-    var costPerGram = Number(cycle.purchase_price_per_gram) || 0;
-    var costBasis = qty * costPerGram;
-    var grossProfit = total - costBasis;
+    // رأس المال يعود أولاً، والباقي ربح
+    var capAmt = Math.min(total, cost);
+    var profAmt = Math.max(0, profit);
 
-    var agentPct = Number(document.getElementById('ps_agent_pct').value) || 0;
-    var commissionAmount = total * agentPct / 100;
-
-    var taxType = document.getElementById('ps_tax_type').value;
-    var taxValue = Number(document.getElementById('ps_tax_value').value) || 0;
-    var taxAmount = 0;
-    if (taxType === 'percent') taxAmount = total * taxValue / 100;
-    else if (taxType === 'fixed') taxAmount = taxValue;
-
-    var feeAmount = Number(document.getElementById('ps_fee').value) || 0;
-    var netProfit = grossProfit - commissionAmount - taxAmount - feeAmount;
-
-    document.getElementById('ps_total').value = total.toFixed(2);
-    document.getElementById('ps_cost').value = costBasis.toFixed(2);
-    document.getElementById('ps_gross').value = grossProfit.toFixed(2);
-    document.getElementById('ps_net').value = netProfit.toFixed(2);
+    document.getElementById('ps_cap').value = capAmt.toFixed(2);
+    document.getElementById('ps_prof').value = profAmt.toFixed(2);
   }
 
-  ['ps_qty','ps_ppg','ps_agent_pct','ps_tax_value','ps_fee'].forEach(function(id){
-    document.getElementById(id).addEventListener('input', recalc);
-  });
-  document.getElementById('ps_tax_type').addEventListener('change', recalc);
-  recalc();
+  document.getElementById('ps_qty').addEventListener('input', calc);
+  document.getElementById('ps_ppg').addEventListener('input', calc);
+  calc();
 
-  var submitBtn = document.getElementById('formModalSubmit');
-  submitBtn.textContent = 'حفظ البيع';
-  submitBtn.style.display = '';
-  submitBtn.onclick = function(){
+  var sub = document.getElementById('formModalSubmit');
+  if (sub) {
+    sub.textContent = 'حفظ وتوزيع المبلغ';
+    sub.style.display = '';
+  }
+  GN.openModal('formModal');
+
+  sub.onclick = function(){
     var qty = Number(document.getElementById('ps_qty').value) || 0;
     var ppg = Number(document.getElementById('ps_ppg').value) || 0;
-    if (!qty || !ppg){ GN.toast(GN.t('fieldRequired'), 'bad'); return; }
-    if (qty > maxG + 0.001){ GN.toast('الكمية أكبر من المتبقي في الدورة', 'bad'); return; }
-
+    var bankId = document.getElementById('ps_bank').value;
+    var capAmt = Number(document.getElementById('ps_cap').value) || 0;
+    var profAmt = Number(document.getElementById('ps_prof').value) || 0;
     var total = qty * ppg;
-    var costPerGram = Number(cycle.purchase_price_per_gram) || 0;
-    var costBasis = qty * costPerGram;
-    var grossProfit = total - costBasis;
 
-    var agentId = document.getElementById('ps_agent').value || null;
-    var agentPct = Number(document.getElementById('ps_agent_pct').value) || 0;
-    var commissionAmount = total * agentPct / 100;
+    if (!qty || !ppg) { GN.toast('أدخل الكمية والسعر', 'bad'); return; }
 
-    var taxType = document.getElementById('ps_tax_type').value;
-    var taxValue = Number(document.getElementById('ps_tax_value').value) || 0;
-    var taxAmount = taxType === 'percent' ? total * taxValue / 100 : (taxType === 'fixed' ? taxValue : 0);
+    sub.disabled = true;
 
-    var feeAmount = Number(document.getElementById('ps_fee').value) || 0;
-    var netProfit = grossProfit - commissionAmount - taxAmount - feeAmount;
-
-    var saleISO = document.getElementById('ps_date').value + 'T' + document.getElementById('ps_time').value + ':00';
-
+    // 1. حفظ البيع في الدورة
     var payload = {
       cycle_id: cycle.id,
-      sale_date: saleISO,
+      sale_date: new Date().toISOString(),
       quantity_grams: qty,
       selling_price_per_gram: ppg,
       selling_total: total,
-      sale_state_id: document.getElementById('ps_state').value || null,
-      sale_city_id:  document.getElementById('ps_city').value || null,
-      sale_place_id: document.getElementById('ps_place').value || null,
-      sale_agent_id: agentId,
-      sale_commission_pct: agentPct,
-      sale_commission_amount: commissionAmount,
-      sale_tax_type: taxType,
-      sale_tax_value: taxValue,
-      sale_tax_amount: taxAmount,
-      sale_fee_amount: feeAmount,
-      sale_fee_desc: document.getElementById('ps_fee_desc').value.trim(),
-      cost_basis: costBasis,
-      gross_profit: grossProfit,
-      net_profit: netProfit,
-      profit_status: 'pending',
-      attachment_url: document.getElementById('ps_attach').value.trim(),
-      notes: document.getElementById('ps_notes').value.trim()
+      cost_basis: capAmt,
+      net_profit: profAmt,
+      profit_status: 'realized',
+      bank_id: bankId
     };
 
-    submitBtn.disabled = true;
     GN.supa.from('gold_cycle_sales').insert(payload).select().then(function(res){
-      if (res.error){ submitBtn.disabled = false; GN.toast(res.error.message, 'bad'); console.error(res.error); return; }
+      if (res.error) {
+        GN.toast(res.error.message, 'bad'); sub.disabled = false; return;
+      }
 
-      var newSaleId = res.data && res.data[0] ? res.data[0].id : null;
+      var saleId = res.data[0].id;
 
-      var createAgentPayable = function(){
-        if (!agentId || commissionAmount <= 0){ finalize(); return; }
-        GN.supa.from('agents').select('id,code,name,phone,bank_name,account_number,payment_method').eq('id', agentId).single().then(function(aRes){
-          if (aRes.error || !aRes.data){ finalize(); return; }
-          var agent = aRes.data;
-          var p = GN.session.profile;
-          var payCode = 'PAY-' + new Date().getFullYear() + '-' + String(Date.now()).slice(-4);
+      // 2. إضافة المبلغ الإجمالي للبنك
+      var bank = banks.filter(function(b){ return b.id === bankId; })[0];
+      if (bank) {
+        bank.balance = Number(bank.balance || 0) + total;
+        GN.addBankTransfer({
+          bank_id: bankId, type: 'in', amount: total, currency: bank.currency || 'SDG',
+          party: 'بيع دورة ' + cycle.code, source: 'cycle', source_id: saleId, date: GN.today()
+        });
+      }
 
-          GN.supa.from('payment_orders').insert({
-            code: payCode,
-            type: 'agent',
-            beneficiary_name: agent.name || '',
-            beneficiary_bank: agent.bank_name || '',
-            beneficiary_account: agent.account_number || '',
-            beneficiary_phone: agent.phone || '',
-            payment_method: agent.payment_method || 'cash',
-            amount: commissionAmount,
-            currency: 'SDG',
-            amount_sdg: commissionAmount,
-            due_date: null,
-            status: 'pending',
-            linked_source: 'gold_sale',
-            linked_id: newSaleId || '',
-            linked_desc: cycle.code || '',
-            notes: 'عمولة مندوب بيع — ' + (cycle.code || ''),
-            created_by: GN.session.user.id,
-            created_by_name: (p && (p.full_name || p.email)) || ''
-          }).then(function(){
-            GN.toast('✓ تم إنشاء استحقاق المندوب تلقائيًا', 'ok');
-            finalize();
+      // 3. إضافة رأس المال والأرباح إلى الأوعية
+      GN.supa.from('fund_pools').select('id, code, balance').in('code', ['gold', 'profit']).then(function(pRes){
+        if (pRes.data) {
+          var goldPool = pRes.data.filter(function(p){ return p.code === 'gold'; })[0];
+          var profitPool = pRes.data.filter(function(p){ return p.code === 'profit'; })[0];
+
+          if (goldPool && capAmt > 0) {
+            GN.supa.from('fund_pools').update({ balance: Number(goldPool.balance) + capAmt }).eq('id', goldPool.id);
+            GN.supa.from('fund_transactions').insert({ pool_id: goldPool.id, type: 'in', amount: capAmt, currency: 'SDG', reason: 'إرجاع رأس مال من دورة ' + cycle.code });
+          }
+          if (profitPool && profAmt > 0) {
+            GN.supa.from('fund_pools').update({ balance: Number(profitPool.balance) + profAmt }).eq('id', profitPool.id);
+            GN.supa.from('fund_transactions').insert({ pool_id: profitPool.id, type: 'in', amount: profAmt, currency: 'SDG', reason: 'أرباح دورة ' + cycle.code });
+          }
+        }
+
+        // 4. تحديث حالة الدورة
+        var newRem = maxG - qty;
+        GN.supa.from('gold_cycles').update({
+          remaining_grams: newRem,
+          sold_grams: Number(cycle.sold_grams || 0) + qty,
+          status: newRem <= 0.01 ? 'closed' : 'partial'
+        }).eq('id', cycle.id).then(function(){
+          sub.disabled = false;
+          GN.savePublicData(GN.dash.data).then(function(){
+            GN.toast('✓ تم البيع — رأس المال: ' + GN.formatNum(capAmt) + ' · الأرباح: ' + GN.formatNum(profAmt) + ' · البنك: ' + GN.formatNum(total), 'ok');
+            GN.closeModal('formModal');
+            if (onSuccess) onSuccess();
+            else GN.loadCycles();
           });
         });
-      };
-
-      var finalize = function(){
-        submitBtn.disabled = false;
-        GN.toast('تم تسجيل البيع — الربح معلق', 'ok');
-        GN.notify.send({
-          type: 'edit',
-          section: 'cycles',
-          target: 'cycle',
-          target_id: cycle.id,
-          title: 'بيع جزئي · ' + cycle.code,
-          body: GN.formatNum(qty, 2) + 'g × ' + GN.formatNum(ppg, 2) + ' = ' + GN.formatNum(total, 2) + ' SDG'
-        });
-
-        GN.recalcCycleTotals(cycle.id).then(function(){
-          GN.closeModal('formModal');
-          if (onSuccess) onSuccess();
-          else GN.loadCycles();
-        });
-      };
-
-      createAgentPayable();
+      });
     });
   };
-
-  GN.openModal('formModal');
 };
 
 /* ============================================================
@@ -1690,20 +1630,8 @@ GN.realizeProfit = function(saleId, cycleId, onSuccess){
           body: GN.formatMoneyPlain(sale.net_profit, 'SDG') + ' — ' + trf
         });
 
-        GN.supa.from('fund_pools').select('id').eq('code','profit').single().then(function(fr){
-          if (!fr.error && fr.data){
-            GN.supa.from('fund_transactions').insert({
-              pool_id: fr.data.id,
-              type: 'in',
-              amount: sale.net_profit,
-              currency: 'SDG',
-              reason: 'تحقيق ربح دورة — حوالة ' + trf,
-              reference_type: 'profit_realize',
-              reference_id: saleId,
-              bank_id: bankId
-            });
-          }
-        });
+        // (اختياري) إضافة الربح لوعاء الأرباح - قمنا به عند البيع، لذا لا نكرره هنا
+        // GN.supa.from('fund_pools')...
 
         if (bankId){
           GN.addBankTransfer({

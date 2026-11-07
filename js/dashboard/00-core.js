@@ -28,7 +28,10 @@ GN.navGroups = [
   { title: 'groupFinance', items: [
     { key:'finance',  icon:'dollar', label:'navFinance' },
     { key:'banking',  icon:'bank',   label:'navBanking' },
-    { key:'payables', icon:'wallet', label:'navPayables' }
+    { key:'payables', icon:'wallet', label:'navPayables' },
+    { key:'debts',    icon:'dollar', label:'navDebts' },      // <-- أضف هذا
+    { key:'partners', icon:'users',  label:'navPartners' },
+    { key:'withdrawals', icon:'wallet', label:'طلبات السحب' }
   ]},
   { title: 'groupGold', items: [
     { key:'cycles',    icon:'gold',  label:'navCycles' },
